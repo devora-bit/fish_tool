@@ -606,43 +606,44 @@ class LogView:
                 self.page.update()
             
             def on_confirm(dialog):
-            name = name_field.value
-            try:
-                limit = int(limit_field.value or "50")
-                if limit <= 0:
+                name = name_field.value
+                try:
+                    limit = int(limit_field.value or "50")
+                    if limit <= 0:
+                        limit = 50
+                except ValueError:
                     limit = 50
-            except ValueError:
-                limit = 50
+                
+                if name and name.strip():
+                    new_storage = TemporaryStorage(
+                        name=name.strip(),
+                        limit=limit,
+                        fishes=[]
+                    )
+                    self.app_data.temporary_storages.append(new_storage)
+                    self.app_data.current_storage_name = name.strip()
+                    self.data_manager.save_app_data(self.app_data)
+                    close_dialog(dialog)
+                    self.refresh()
+                    self.on_data_changed()
+                    self._show_snackbar(f"Хранилище '{name.strip()}' создано (лимит: {limit} рыб)", ft.Colors.GREEN)
+                else:
+                    self._show_snackbar("Введите название хранилища!", ft.Colors.RED)
             
-            if name and name.strip():
-                new_storage = TemporaryStorage(
-                    name=name.strip(),
-                    limit=limit,
-                    fishes=[]
-                )
-                self.app_data.temporary_storages.append(new_storage)
-                self.app_data.current_storage_name = name.strip()
-                self.data_manager.save_app_data(self.app_data)
-                close_dialog(dialog)
-                self.refresh()
-                self.on_data_changed()
-                self._show_snackbar(f"Хранилище '{name.strip()}' создано (лимит: {limit} рыб)", ft.Colors.GREEN)
-            else:
-                self._show_snackbar("Введите название хранилища!", ft.Colors.RED)
-        
-        name_field = ft.TextField(
-            label="Название хранилища", 
-            autofocus=True,
-            hint_text="Например: Озеро, Река, Море"
-        )
-        limit_field = ft.TextField(
-            label="Лимит (макс. количество рыб)", 
-            value="50", 
-            keyboard_type=ft.KeyboardType.NUMBER,
-            hint_text="По умолчанию: 50"
-        )
+            name_field = ft.TextField(
+                label="Название хранилища", 
+                autofocus=True,
+                hint_text="Например: Озеро, Река, Море"
+            )
+            limit_field = ft.TextField(
+                label="Лимит (макс. количество рыб)", 
+                value="50", 
+                keyboard_type=ft.KeyboardType.NUMBER,
+                hint_text="По умолчанию: 50"
+            )
         
             dialog = ft.AlertDialog(
+                modal=True,
                 title=ft.Text("Создать новое хранилище"),
                 content=ft.Column([name_field, limit_field], tight=True, width=300, spacing=15),
                 actions=[
@@ -652,11 +653,8 @@ class LogView:
                 actions_alignment=ft.MainAxisAlignment.END
             )
             print("DEBUG: Диалог создан")
-            self.page.dialog = dialog
-            dialog.open = True
-            print("DEBUG: Диалог открыт, вызываю page.update()")
-            self.page.update()
-            print("DEBUG: page.update() выполнен")
+            self.page.open(dialog)
+            print("DEBUG: Диалог открыт через page.open()")
         except Exception as ex:
             print(f"ERROR в _on_create_storage: {ex}")
             import traceback
