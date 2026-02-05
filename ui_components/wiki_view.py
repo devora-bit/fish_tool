@@ -68,8 +68,7 @@ class WikiView:
     
     def _build_fish_card(self, fish_data: dict) -> ft.Container:
         """Создать карточку рыбы из справочника"""
-        rarity = fish_data.get("rarity", "common")
-        rarity_name = RARITY_NAMES.get(rarity, "Серая")
+        description = fish_data.get("description", "Редкая рыба")
         
         return ft.Container(
             content=ft.Card(
@@ -82,12 +81,7 @@ class WikiView:
                                     ft.Column(
                                         [
                                             ft.Text(fish_data["name"], size=18, weight=ft.FontWeight.BOLD),
-                                            ft.Container(
-                                                content=ft.Text(rarity_name, size=12, color=ft.Colors.WHITE),
-                                                padding=ft.padding.symmetric(horizontal=8, vertical=3),
-                                                bgcolor=ft.Colors.BLUE_GREY_700,
-                                                border_radius=12
-                                            )
+                                            ft.Text(description, size=13, color=ft.Colors.GREY_400, italic=True)
                                         ],
                                         spacing=5,
                                         expand=True
