@@ -87,7 +87,7 @@ class StatsView:
         rarity_counter = Counter(f.rarity for f in all_fishes)
         rarity_distribution = dict(rarity_counter)
         
-        # Топ-5 самых пойманных
+        # Топ-5 самых частых рыб
         top_fishes = name_counter.most_common(5)
         
         return {
@@ -194,7 +194,7 @@ class StatsView:
                     ft.Container(
                         content=ft.Column(
                             [
-                                ft.Text("Топ-5 самых пойманных", size=20, weight=ft.FontWeight.BOLD),
+                                ft.Text("Топ-5 самых частых рыб", size=20, weight=ft.FontWeight.BOLD),
                                 ft.Divider(),
                                 self._build_top_fishes_pie_chart(stats["top_fishes"])
                             ],
@@ -231,7 +231,7 @@ class StatsView:
             ft.Container(
                 content=ft.Column(
                     [
-                        ft.Text("Детальная статистика улова", size=20, weight=ft.FontWeight.BOLD),
+                        ft.Text("Топ-5 по количеству улова", size=20, weight=ft.FontWeight.BOLD),
                         ft.Divider(),
                         self._build_top_fishes_chart(stats["top_fishes"])
                     ],
