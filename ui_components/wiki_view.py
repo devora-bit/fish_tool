@@ -108,7 +108,7 @@ class WikiView:
                                             ],
                                             spacing=2
                                         ),
-                                        col={"xs": 12, "sm": 4, "md": 4}
+                                        col={"xs": 12, "sm": 6, "md": 6}
                                     ),
                                     ft.Container(
                                         content=ft.Column(
@@ -124,17 +124,7 @@ class WikiView:
                                             ],
                                             spacing=2
                                         ),
-                                        col={"xs": 12, "sm": 4, "md": 4}
-                                    ),
-                                    ft.Container(
-                                        content=ft.Column(
-                                            [
-                                                ft.Text("Цена:", size=12, color=ft.Colors.GREY_400),
-                                                ft.Text(f"{fish_data.get('price_guide', 0):.0f}", size=14)
-                                            ],
-                                            spacing=2
-                                        ),
-                                        col={"xs": 12, "sm": 4, "md": 4}
+                                        col={"xs": 12, "sm": 6, "md": 6}
                                     )
                                 ],
                                 spacing=10
