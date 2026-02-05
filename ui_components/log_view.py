@@ -469,10 +469,16 @@ class LogView:
     
     def _on_create_storage(self, e):
         """Создать новое хранилище"""
+        def close_dialog(dialog):
+            dialog.open = False
+            self.page.update()
+        
         def on_confirm(dialog):
             name = name_field.value
             try:
                 limit = int(limit_field.value or "50")
+                if limit <= 0:
+                    limit = 50
             except ValueError:
                 limit = 50
             
@@ -485,26 +491,33 @@ class LogView:
                 self.app_data.temporary_storages.append(new_storage)
                 self.app_data.current_storage_name = name.strip()
                 self.data_manager.save_app_data(self.app_data)
+                close_dialog(dialog)
                 self.refresh()
                 self.on_data_changed()
-                dialog.open = False
-                self.page.update()
+                self._show_snackbar(f"Хранилище '{name.strip()}' создано (лимит: {limit} рыб)", ft.Colors.GREEN)
+            else:
+                self._show_snackbar("Введите название хранилища!", ft.Colors.RED)
         
-        name_field = ft.TextField(label="Название хранилища", autofocus=True)
+        name_field = ft.TextField(
+            label="Название хранилища", 
+            autofocus=True,
+            hint_text="Например: Озеро, Река, Море"
+        )
         limit_field = ft.TextField(
             label="Лимит (макс. количество рыб)", 
             value="50", 
             keyboard_type=ft.KeyboardType.NUMBER,
-            hint_text="Введите максимальное количество рыб"
+            hint_text="По умолчанию: 50"
         )
         
         dialog = ft.AlertDialog(
             title=ft.Text("Создать новое хранилище"),
-            content=ft.Column([name_field, limit_field], tight=True, width=300),
+            content=ft.Column([name_field, limit_field], tight=True, width=300, spacing=15),
             actions=[
-                ft.TextButton("Отмена", on_click=lambda _: setattr(dialog, "open", False) or self.page.update()),
-                ft.TextButton("Создать", on_click=lambda _: on_confirm(dialog))
-            ]
+                ft.TextButton("Отмена", on_click=lambda _: close_dialog(dialog)),
+                ft.FilledButton("Создать", on_click=lambda _: on_confirm(dialog))
+            ],
+            actions_alignment=ft.MainAxisAlignment.END
         )
         self.page.dialog = dialog
         dialog.open = True
@@ -516,6 +529,10 @@ class LogView:
         if not current_storage or not current_storage.fishes:
             self._show_snackbar("Нет рыбы для переноса!", ft.Colors.ORANGE)
             return
+        
+        def close_dialog(dialog):
+            dialog.open = False
+            self.page.update()
         
         def on_confirm(dialog):
             # Сохранить количество перед переносом
@@ -530,19 +547,22 @@ class LogView:
             current_storage.fishes.clear()
             
             self.data_manager.save_app_data(self.app_data)
+            close_dialog(dialog)
             self.refresh()
             self.on_data_changed()
-            dialog.open = False
-            self.page.update()
             self._show_snackbar(f"Переведено {fish_count} рыб в постоянное хранилище!", ft.Colors.GREEN)
         
         dialog = ft.AlertDialog(
-            title=ft.Text("Подтверждение"),
-            content=ft.Text(f"Перевести все {len(current_storage.fishes)} рыб из '{current_storage.name}' в постоянное хранилище?"),
+            title=ft.Text("Подтверждение переноса"),
+            content=ft.Text(
+                f"Перевести все {len(current_storage.fishes)} рыб из '{current_storage.name}' в постоянное хранилище?",
+                size=14
+            ),
             actions=[
-                ft.TextButton("Отмена", on_click=lambda _: setattr(dialog, "open", False) or self.page.update()),
-                ft.TextButton("Подтвердить", on_click=lambda _: on_confirm(dialog))
-            ]
+                ft.TextButton("Отмена", on_click=lambda _: close_dialog(dialog)),
+                ft.FilledButton("Подтвердить", on_click=lambda _: on_confirm(dialog))
+            ],
+            actions_alignment=ft.MainAxisAlignment.END
         )
         self.page.dialog = dialog
         dialog.open = True
@@ -554,25 +574,38 @@ class LogView:
             self._show_snackbar("Нет рыбы для продажи!", ft.Colors.ORANGE)
             return
         
+        def close_dialog(dialog):
+            dialog.open = False
+            self.page.update()
+        
         def on_confirm(dialog):
             total_price = sum(f.price_guide for f in self.app_data.permanent_storage)
             count = len(self.app_data.permanent_storage)
             
             self.app_data.permanent_storage.clear()
             self.data_manager.save_app_data(self.app_data)
+            close_dialog(dialog)
             self.refresh()
             self.on_data_changed()
-            dialog.open = False
-            self.page.update()
             self._show_snackbar(f"Улов продан! Общая примерная выручка: {total_price:.0f} (продано {count} рыб)", ft.Colors.GREEN)
+        
+        total_price = sum(f.price_guide for f in self.app_data.permanent_storage)
         
         dialog = ft.AlertDialog(
             title=ft.Text("Подтверждение продажи"),
-            content=ft.Text(f"Продать весь улов ({len(self.app_data.permanent_storage)} рыб)?"),
+            content=ft.Column(
+                [
+                    ft.Text(f"Продать весь улов ({len(self.app_data.permanent_storage)} рыб)?", size=14),
+                    ft.Text(f"Примерная выручка: {total_price:.0f}", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN)
+                ],
+                tight=True,
+                spacing=10
+            ),
             actions=[
-                ft.TextButton("Отмена", on_click=lambda _: setattr(dialog, "open", False) or self.page.update()),
-                ft.TextButton("Продать", on_click=lambda _: on_confirm(dialog))
-            ]
+                ft.TextButton("Отмена", on_click=lambda _: close_dialog(dialog)),
+                ft.FilledButton("Продать", on_click=lambda _: on_confirm(dialog))
+            ],
+            actions_alignment=ft.MainAxisAlignment.END
         )
         self.page.dialog = dialog
         dialog.open = True
