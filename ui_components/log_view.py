@@ -426,81 +426,85 @@ class LogView:
     def _on_add_fish(self, e):
         """Добавить рыбу в лог"""
         print("DEBUG: _on_add_fish вызван!")
-        # Получить выбранную редкость
-        # Избегаем прямого доступа к selected (set), чтобы не вызывать проблем с сериализацией
-        rarity = "common"  # Значение по умолчанию
         try:
-            if self.selected_rarity.current:
-                # Пытаемся безопасно получить selected, но если это вызывает проблему, используем значение по умолчанию
-                # Используем getattr вместо прямого доступа, чтобы избежать проблем
-                selected_attr = getattr(self.selected_rarity.current, 'selected', None)
-                if selected_attr:
-                    # Преобразуем set в list для безопасной работы
-                    selected_list = list(selected_attr) if isinstance(selected_attr, (set, list, tuple)) else []
-                    if selected_list:
-                        rarity = selected_list[0]
-        except Exception:
-            # В случае любой ошибки используем значение по умолчанию
-            rarity = "common"
-        
-        # Получить название
-        fish_name = self.fish_name_field.current.value
-        if not fish_name or not fish_name.strip():
-            self._show_snackbar("Введите название рыбы!", ft.Colors.RED)
-            return
-        
-        # Получить вес
-        try:
-            weight = float(self.weight_field.current.value or "0")
-            if weight <= 0:
-                raise ValueError
-        except ValueError:
-            self._show_snackbar("Введите корректный вес!", ft.Colors.RED)
-            return
-        
-        # Получить информацию о рыбе из справочника
-        fish_info = self.data_manager.get_fish_info(fish_name)
-        if not fish_info:
-            # Если рыбы нет в справочнике, использовать значения по умолчанию
-            price_guide = 50
-            best_bait = "Неизвестно"
-        else:
-            price_guide = fish_info.get("price_guide", 50)
-            best_bait = fish_info.get("best_bait", "Неизвестно")
-            # Можно использовать редкость из справочника, но пользователь может переопределить
-        
-        # Создать рыбу
-        fish = Fish.create(
-            name=fish_name.strip(),
-            rarity=rarity,
-            weight=weight,
-            price_guide=price_guide,
-            best_bait=best_bait,
-            storage="temporary"
-        )
-        
-        # Добавить в текущее хранилище
-        current_storage = self.app_data.get_current_storage()
-        if not current_storage:
-            self._show_snackbar("Ошибка: нет активного хранилища!", ft.Colors.RED)
-            return
-        
-        # Проверить лимит
-        if len(current_storage.fishes) >= current_storage.limit:
-            self._show_snackbar("Хранилище заполнено! Переведите рыбу в постоянное хранилище.", ft.Colors.RED)
-            return
-        
-        current_storage.fishes.append(fish)
-        
-        # Очистить форму
-        self.fish_name_field.current.value = ""
-        self.weight_field.current.value = ""
-        
-        # Сохранить и обновить UI
-        self.data_manager.save_app_data(self.app_data)
-        self.refresh()
-        self.on_data_changed()
-        self._show_snackbar(f"Рыба '{fish_name}' добавлена!", ft.Colors.GREEN)
+            # Получить выбранную редкость
+            rarity = "common"  # Значение по умолчанию
+            try:
+                if self.selected_rarity.current:
+                    selected_attr = getattr(self.selected_rarity.current, 'selected', None)
+                    if selected_attr:
+                        selected_list = list(selected_attr) if isinstance(selected_attr, (set, list, tuple)) else []
+                        if selected_list:
+                            rarity = selected_list[0]
+            except Exception:
+                rarity = "common"
+            
+            # Получить название
+            fish_name = self.fish_name_field.current.value
+            if not fish_name or not fish_name.strip():
+                self._show_snackbar("Введите название рыбы!", ft.Colors.RED)
+                return
+            
+            # Получить вес
+            try:
+                weight = float(self.weight_field.current.value or "0")
+                if weight <= 0:
+                    raise ValueError
+            except ValueError:
+                self._show_snackbar("Введите корректный вес!", ft.Colors.RED)
+                return
+            
+            # Получить информацию о рыбе из справочника
+            fish_info = self.data_manager.get_fish_info(fish_name)
+            if not fish_info:
+                price_guide = 50
+                best_bait = "Неизвестно"
+            else:
+                price_guide = fish_info.get("price_guide", 50)
+                best_bait = fish_info.get("best_bait", "Неизвестно")
+            
+            # Создать рыбу
+            fish = Fish.create(
+                name=fish_name.strip(),
+                rarity=rarity,
+                weight=weight,
+                price_guide=price_guide,
+                best_bait=best_bait,
+                storage="temporary"
+            )
+            
+            # Добавить в текущее хранилище
+            current_storage = self.app_data.get_current_storage()
+            if not current_storage:
+                self._show_snackbar("Ошибка: нет активного хранилища!", ft.Colors.RED)
+                return
+            
+            # Проверить лимит
+            if len(current_storage.fishes) >= current_storage.limit:
+                self._show_snackbar("Хранилище заполнено! Переведите рыбу в постоянное хранилище.", ft.Colors.RED)
+                return
+            
+            current_storage.fishes.append(fish)
+            
+            # Очистить форму
+            self.fish_name_field.current.value = ""
+            self.weight_field.current.value = ""
+            
+            # Сохранить и обновить UI
+            print(f"DEBUG: Сохраняю рыбу {fish_name}")
+            self.data_manager.save_app_data(self.app_data)
+            print("DEBUG: Данные сохранены")
+            self.refresh()
+            print("DEBUG: UI обновлен")
+            self.on_data_changed()
+            print("DEBUG: on_data_changed вызван")
+            self._show_snackbar(f"Рыба '{fish_name}' добавлена!", ft.Colors.GREEN)
+            print("DEBUG: _on_add_fish завершен успешно")
+        except Exception as ex:
+            print(f"ERROR в _on_add_fish: {ex}")
+            import traceback
+            traceback.print_exc()
+            self._show_snackbar(f"Ошибка при добавлении рыбы: {ex}", ft.Colors.RED)
     
     def _on_edit_storage(self, e):
         """Редактировать текущее хранилище"""
@@ -596,11 +600,12 @@ class LogView:
     def _on_create_storage(self, e):
         """Создать новое хранилище"""
         print("DEBUG: _on_create_storage вызван!")
-        def close_dialog(dialog):
-            dialog.open = False
-            self.page.update()
-        
-        def on_confirm(dialog):
+        try:
+            def close_dialog(dialog):
+                dialog.open = False
+                self.page.update()
+            
+            def on_confirm(dialog):
             name = name_field.value
             try:
                 limit = int(limit_field.value or "50")
@@ -637,18 +642,26 @@ class LogView:
             hint_text="По умолчанию: 50"
         )
         
-        dialog = ft.AlertDialog(
-            title=ft.Text("Создать новое хранилище"),
-            content=ft.Column([name_field, limit_field], tight=True, width=300, spacing=15),
-            actions=[
-                ft.TextButton("Отмена", on_click=lambda _: close_dialog(dialog)),
-                ft.FilledButton("Создать", on_click=lambda _: on_confirm(dialog))
-            ],
-            actions_alignment=ft.MainAxisAlignment.END
-        )
-        self.page.dialog = dialog
-        dialog.open = True
-        self.page.update()
+            dialog = ft.AlertDialog(
+                title=ft.Text("Создать новое хранилище"),
+                content=ft.Column([name_field, limit_field], tight=True, width=300, spacing=15),
+                actions=[
+                    ft.TextButton("Отмена", on_click=lambda _: close_dialog(dialog)),
+                    ft.FilledButton("Создать", on_click=lambda _: on_confirm(dialog))
+                ],
+                actions_alignment=ft.MainAxisAlignment.END
+            )
+            print("DEBUG: Диалог создан")
+            self.page.dialog = dialog
+            dialog.open = True
+            print("DEBUG: Диалог открыт, вызываю page.update()")
+            self.page.update()
+            print("DEBUG: page.update() выполнен")
+        except Exception as ex:
+            print(f"ERROR в _on_create_storage: {ex}")
+            import traceback
+            traceback.print_exc()
+            self._show_snackbar(f"Ошибка: {ex}", ft.Colors.RED)
     
     def _on_transfer_to_permanent(self, e):
         """Перевести все рыбы в постоянное хранилище"""

@@ -3,7 +3,30 @@
     {
       "name": "Основное хранилище",
       "limit": 50,
-      "fishes": []
+      "fishes": [
+        {
+          "id": "bd240662-9cd3-427d-8933-02620d145e35",
+          "name": "Марлин",
+          "rarity": "trophy",
+          "rarity_display": "Зеленая",
+          "weight": 6.0,
+          "timestamp": "2026-02-05T04:33:18.781287",
+          "price_guide": 15000,
+          "best_bait": "Воблер",
+          "storage": "temporary"
+        },
+        {
+          "id": "ffa6d3c4-4d60-48d0-b152-6cbdd3783083",
+          "name": "Тарпон",
+          "rarity": "trophy",
+          "rarity_display": "Зеленая",
+          "weight": 3.0,
+          "timestamp": "2026-02-05T04:33:39.364097",
+          "price_guide": 10000,
+          "best_bait": "Свимбейт",
+          "storage": "temporary"
+        }
+      ]
     }
   ],
   "permanent_storage": [],
