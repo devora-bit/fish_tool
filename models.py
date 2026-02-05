@@ -88,12 +88,14 @@ class AppData:
     temporary_storages: list[TemporaryStorage]
     permanent_storage: list[Fish]
     current_storage_name: str
+    permanent_storage_limit: int = 100  # Лимит для постоянного хранилища
     
     def to_dict(self):
         return {
             "temporary_storages": [ts.to_dict() for ts in self.temporary_storages],
             "permanent_storage": [f.to_dict() for f in self.permanent_storage],
-            "current_storage_name": self.current_storage_name
+            "current_storage_name": self.current_storage_name,
+            "permanent_storage_limit": self.permanent_storage_limit
         }
     
     @classmethod
@@ -101,7 +103,8 @@ class AppData:
         return cls(
             temporary_storages=[TemporaryStorage.from_dict(ts) for ts in data.get("temporary_storages", [])],
             permanent_storage=[Fish.from_dict(f) for f in data.get("permanent_storage", [])],
-            current_storage_name=data.get("current_storage_name", "")
+            current_storage_name=data.get("current_storage_name", ""),
+            permanent_storage_limit=data.get("permanent_storage_limit", 100)
         )
     
     @classmethod
@@ -115,7 +118,8 @@ class AppData:
         return cls(
             temporary_storages=[default_storage],
             permanent_storage=[],
-            current_storage_name="Основное хранилище"
+            current_storage_name="Основное хранилище",
+            permanent_storage_limit=100
         )
     
     def get_current_storage(self) -> Optional[TemporaryStorage]:
@@ -127,3 +131,9 @@ class AppData:
             self.current_storage_name = self.temporary_storages[0].name
             return self.temporary_storages[0]
         return None
+    
+    def get_permanent_fill_percentage(self) -> float:
+        """Получить процент заполнения постоянного хранилища"""
+        if self.permanent_storage_limit == 0:
+            return 0
+        return (len(self.permanent_storage) / self.permanent_storage_limit) * 100

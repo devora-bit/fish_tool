@@ -337,13 +337,38 @@ class LogView:
     
     def _build_right_panel(self) -> ft.Column:
         """Правая панель: постоянное хранилище"""
+        fill_percentage = self.app_data.get_permanent_fill_percentage()
+        is_warning = fill_percentage > 95
+        
         return ft.Column(
             [
-                ft.Text("Постоянное хранилище", size=20, weight=ft.FontWeight.BOLD),
-                ft.Text(
-                    f"Всего трофеев: {len(self.app_data.permanent_storage)}",
-                    size=16,
-                    weight=ft.FontWeight.W_500
+                ft.Row(
+                    [
+                        ft.Text("Постоянное хранилище", size=20, weight=ft.FontWeight.BOLD, expand=True),
+                        ft.IconButton(
+                            icon=ft.Icons.SETTINGS,
+                            tooltip="Настроить лимит",
+                            on_click=self._on_configure_permanent_limit,
+                            icon_size=20
+                        )
+                    ],
+                    spacing=5
+                ),
+                ft.Column(
+                    [
+                        ft.Text(
+                            f"Заполнено: {len(self.app_data.permanent_storage)}/{self.app_data.permanent_storage_limit}",
+                            size=14,
+                            weight=ft.FontWeight.W_500
+                        ),
+                        ft.ProgressBar(
+                            value=fill_percentage / 100,
+                            color=ft.Colors.RED if is_warning else ft.Colors.GREEN,
+                            bgcolor=ft.Colors.GREY_300,
+                            height=8
+                        )
+                    ],
+                    spacing=5
                 ),
                 ft.Divider(),
                 ft.Container(
@@ -530,6 +555,19 @@ class LogView:
             self._show_snackbar("Нет рыбы для переноса!", ft.Colors.ORANGE)
             return
         
+        # Проверка лимита постоянного хранилища
+        fish_to_transfer = len(current_storage.fishes)
+        current_permanent = len(self.app_data.permanent_storage)
+        permanent_limit = self.app_data.permanent_storage_limit
+        
+        if current_permanent + fish_to_transfer > permanent_limit:
+            available_space = permanent_limit - current_permanent
+            self._show_snackbar(
+                f"Недостаточно места! Доступно мест: {available_space}, пытаетесь перенести: {fish_to_transfer}",
+                ft.Colors.RED
+            )
+            return
+        
         def close_dialog(dialog):
             dialog.open = False
             self.page.update()
@@ -554,13 +592,83 @@ class LogView:
         
         dialog = ft.AlertDialog(
             title=ft.Text("Подтверждение переноса"),
-            content=ft.Text(
-                f"Перевести все {len(current_storage.fishes)} рыб из '{current_storage.name}' в постоянное хранилище?",
-                size=14
+            content=ft.Column(
+                [
+                    ft.Text(
+                        f"Перевести все {len(current_storage.fishes)} рыб из '{current_storage.name}' в постоянное хранилище?",
+                        size=14
+                    ),
+                    ft.Text(
+                        f"Свободно мест: {permanent_limit - current_permanent}",
+                        size=12,
+                        color=ft.Colors.GREY_400
+                    )
+                ],
+                tight=True,
+                spacing=5
             ),
             actions=[
                 ft.TextButton("Отмена", on_click=lambda _: close_dialog(dialog)),
                 ft.FilledButton("Подтвердить", on_click=lambda _: on_confirm(dialog))
+            ],
+            actions_alignment=ft.MainAxisAlignment.END
+        )
+        self.page.dialog = dialog
+        dialog.open = True
+        self.page.update()
+    
+    def _on_configure_permanent_limit(self, e):
+        """Настроить лимит постоянного хранилища"""
+        def close_dialog(dialog):
+            dialog.open = False
+            self.page.update()
+        
+        def on_confirm(dialog):
+            try:
+                new_limit = int(limit_field.value or "100")
+                if new_limit <= 0:
+                    self._show_snackbar("Лимит должен быть больше 0!", ft.Colors.RED)
+                    return
+                
+                # Проверка: если новый лимит меньше текущего количества
+                if new_limit < len(self.app_data.permanent_storage):
+                    self._show_snackbar(
+                        f"Невозможно установить лимит {new_limit}! Сейчас в хранилище {len(self.app_data.permanent_storage)} рыб.",
+                        ft.Colors.RED
+                    )
+                    return
+                
+                self.app_data.permanent_storage_limit = new_limit
+                self.data_manager.save_app_data(self.app_data)
+                close_dialog(dialog)
+                self.refresh()
+                self.on_data_changed()
+                self._show_snackbar(f"Лимит постоянного хранилища установлен: {new_limit}", ft.Colors.GREEN)
+            except ValueError:
+                self._show_snackbar("Введите корректное число!", ft.Colors.RED)
+        
+        limit_field = ft.TextField(
+            label="Новый лимит", 
+            value=str(self.app_data.permanent_storage_limit),
+            keyboard_type=ft.KeyboardType.NUMBER,
+            hint_text="Минимум: текущее количество рыб",
+            autofocus=True
+        )
+        
+        dialog = ft.AlertDialog(
+            title=ft.Text("Настройка постоянного хранилища"),
+            content=ft.Column(
+                [
+                    ft.Text(f"Текущее количество рыб: {len(self.app_data.permanent_storage)}", size=13, color=ft.Colors.GREY_400),
+                    limit_field
+                ],
+                tight=True,
+                width=300,
+                spacing=10
+            ),
+            actions=[
+                ft.TextButton("Отмена", on_click=lambda _: close_dialog(dialog)),
+                ft.FilledButton("Сохранить", on_click=lambda _: on_confirm(dialog))
             ],
             actions_alignment=ft.MainAxisAlignment.END
         )
