@@ -78,11 +78,16 @@ class WikiView:
                         [
                             ft.Row(
                                 [
-                                    ft.Icon(ft.Icons.WATER_DROP, color=ft.Colors.BLUE_400, size=30),
+                                    ft.Text("🐟", size=40),
                                     ft.Column(
                                         [
                                             ft.Text(fish_data["name"], size=18, weight=ft.FontWeight.BOLD),
-                                            ft.Text(f"Вид: {rarity_name}", size=13, color=ft.Colors.GREY_400)
+                                            ft.Container(
+                                                content=ft.Text(rarity_name, size=12, color=ft.Colors.WHITE),
+                                                padding=ft.padding.symmetric(horizontal=8, vertical=3),
+                                                bgcolor=ft.Colors.BLUE_GREY_700,
+                                                border_radius=12
+                                            )
                                         ],
                                         spacing=5,
                                         expand=True
