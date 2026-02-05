@@ -218,16 +218,25 @@ class StatsView:
             name = RARITY_NAMES.get(rarity, "Серая")
             
             items.append(
-                ft.Row(
+                ft.ResponsiveRow(
                     [
                         ft.Container(
-                            width=20,
-                            height=20,
-                            bgcolor=color,
-                            border_radius=10
+                            content=ft.Container(
+                                width=20,
+                                height=20,
+                                bgcolor=color,
+                                border_radius=10
+                            ),
+                            col={"xs": 1, "sm": 1}
                         ),
-                        ft.Text(name, size=14, expand=True),
-                        ft.Text(f"{count} ({percentage:.1f}%)", size=14, weight=ft.FontWeight.W_500)
+                        ft.Container(
+                            content=ft.Text(name, size=14),
+                            col={"xs": 7, "sm": 8}
+                        ),
+                        ft.Container(
+                            content=ft.Text(f"{count} ({percentage:.1f}%)", size=14, weight=ft.FontWeight.W_500),
+                            col={"xs": 4, "sm": 3}
+                        )
                     ],
                     spacing=10
                 )
@@ -260,11 +269,20 @@ class StatsView:
             items.append(
                 ft.Column(
                     [
-                        ft.Row(
+                        ft.ResponsiveRow(
                             [
-                                ft.Text(f"{i}.", size=14, width=30),
-                                ft.Text(name, size=14, expand=True),
-                                ft.Text(str(count), size=14, weight=ft.FontWeight.W_500, width=50)
+                                ft.Container(
+                                    content=ft.Text(f"{i}.", size=14),
+                                    col={"xs": 1, "sm": 1}
+                                ),
+                                ft.Container(
+                                    content=ft.Text(name, size=14),
+                                    col={"xs": 9, "sm": 10}
+                                ),
+                                ft.Container(
+                                    content=ft.Text(str(count), size=14, weight=ft.FontWeight.W_500),
+                                    col={"xs": 2, "sm": 1}
+                                )
                             ],
                             spacing=10
                         ),

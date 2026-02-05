@@ -55,14 +55,53 @@ class LogView:
         return ft.Container(
             content=ft.Column(
                 [
-                    ft.Row(
+                    ft.ResponsiveRow(
                         [
-                            self._build_left_panel(),
-                            self._build_center_panel(),
-                            self._build_right_panel()
+                            ft.Container(
+                                content=self._build_left_panel(),
+                                col={"sm": 12, "md": 12, "lg": 4, "xl": 4},
+                                padding=15,
+                                border_radius=10,
+                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
+                                shadow=ft.BoxShadow(
+                                    spread_radius=1,
+                                    blur_radius=15,
+                                    color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
+                                    offset=ft.Offset(0, 4)
+                                ),
+                                height=700
+                            ),
+                            ft.Container(
+                                content=self._build_center_panel(),
+                                col={"sm": 12, "md": 12, "lg": 3, "xl": 3},
+                                padding=15,
+                                border_radius=10,
+                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
+                                shadow=ft.BoxShadow(
+                                    spread_radius=1,
+                                    blur_radius=15,
+                                    color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
+                                    offset=ft.Offset(0, 4)
+                                ),
+                                height=700
+                            ),
+                            ft.Container(
+                                content=self._build_right_panel(),
+                                col={"sm": 12, "md": 12, "lg": 5, "xl": 5},
+                                padding=15,
+                                border_radius=10,
+                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
+                                shadow=ft.BoxShadow(
+                                    spread_radius=1,
+                                    blur_radius=15,
+                                    color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
+                                    offset=ft.Offset(0, 4)
+                                ),
+                                height=700
+                            )
                         ],
-                        expand=True,
-                        spacing=20
+                        spacing=20,
+                        run_spacing=20
                     )
                 ],
                 scroll=ft.ScrollMode.AUTO,
@@ -72,30 +111,18 @@ class LogView:
             expand=True
         )
     
-    def _build_left_panel(self) -> ft.Container:
+    def _build_left_panel(self) -> ft.Column:
         """Левая панель: форма добавления и список текущего улова"""
-        return ft.Container(
-            content=ft.Column(
-                [
-                    ft.Text("Временное хранилище", size=20, weight=ft.FontWeight.BOLD),
-                    self._build_add_fish_form(),
-                    ft.Divider(),
-                    self._build_current_catch_list(),
-                    self._build_progress_indicator()
-                ],
-                spacing=15,
-                expand=True
-            ),
-            width=400,
-            padding=15,
-            border_radius=10,
-            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
-            shadow=ft.BoxShadow(
-                spread_radius=1,
-                blur_radius=15,
-                color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
-                offset=ft.Offset(0, 4)
-            )
+        return ft.Column(
+            [
+                ft.Text("Временное хранилище", size=20, weight=ft.FontWeight.BOLD),
+                self._build_add_fish_form(),
+                ft.Divider(),
+                self._build_current_catch_list(),
+                self._build_progress_indicator()
+            ],
+            spacing=15,
+            expand=True
         )
     
     def _build_rarity_selector(self) -> ft.SegmentedButton:
@@ -147,23 +174,32 @@ class LogView:
                     ref=self.fish_name_field,
                     options=[ft.dropdown.Option(name) for name in self.fish_names],
                     hint_text="Выберите или введите название",
-                    autofocus=False
+                    autofocus=False,
+                    expand=True
                 ),
                 
                 # Поле веса
-                ft.Row(
+                ft.ResponsiveRow(
                     [
-                        ft.Text("Вес:", size=14),
-                        ft.TextField(
-                            ref=self.weight_field,
-                            hint_text="Введите вес",
-                            keyboard_type=ft.KeyboardType.NUMBER,
-                            expand=True
+                        ft.Container(
+                            content=ft.Text("Вес:", size=14),
+                            col={"xs": 2, "sm": 2}
                         ),
-                        ft.Text("кг", size=14, color=ft.Colors.GREY_600)
+                        ft.Container(
+                            content=ft.TextField(
+                                ref=self.weight_field,
+                                hint_text="Введите вес",
+                                keyboard_type=ft.KeyboardType.NUMBER,
+                                expand=True
+                            ),
+                            col={"xs": 9, "sm": 9}
+                        ),
+                        ft.Container(
+                            content=ft.Text("кг", size=14, color=ft.Colors.GREY_600),
+                            col={"xs": 1, "sm": 1}
+                        )
                     ],
-                    spacing=10,
-                    alignment=ft.MainAxisAlignment.START
+                    spacing=10
                 ),
                 
                 # Кнопка добавления
@@ -174,7 +210,8 @@ class LogView:
                     style=ft.ButtonStyle(
                         color=ft.Colors.WHITE,
                         bgcolor=ft.Colors.BLUE_700
-                    )
+                    ),
+                    expand=True
                 )
             ],
             spacing=10
@@ -189,15 +226,17 @@ class LogView:
                     ft.Container(
                         content=ft.ListView(
                             ref=self.fish_list_view,
-                            height=300,
-                            spacing=5
+                            spacing=5,
+                            expand=True
                         ),
                         border=ft.border.all(1, ft.Colors.OUTLINE_VARIANT),
                         border_radius=5,
-                        padding=5
+                        padding=5,
+                        expand=True
                     )
                 ],
-                spacing=5
+                spacing=5,
+                expand=True
             ),
             expand=True
         )
@@ -254,48 +293,38 @@ class LogView:
             )
         )
     
-    def _build_center_panel(self) -> ft.Container:
+    def _build_center_panel(self) -> ft.Column:
         """Центральная панель: управление хранилищами"""
-        return ft.Container(
-            content=ft.Column(
-                [
-                    ft.Text("Управление хранилищами", size=20, weight=ft.FontWeight.BOLD),
-                    self._build_storage_selector(),
-                    ft.ElevatedButton(
-                        "Создать новое хранилище",
-                        icon=ft.Icons.ADD_BOX,
-                        on_click=self._on_create_storage,
-                        style=ft.ButtonStyle(
-                            color=ft.Colors.WHITE,
-                            bgcolor=ft.Colors.GREEN_700
-                        )
+        return ft.Column(
+            [
+                ft.Text("Управление хранилищами", size=20, weight=ft.FontWeight.BOLD),
+                self._build_storage_selector(),
+                ft.ElevatedButton(
+                    "Создать новое хранилище",
+                    icon=ft.Icons.ADD_BOX,
+                    on_click=self._on_create_storage,
+                    style=ft.ButtonStyle(
+                        color=ft.Colors.WHITE,
+                        bgcolor=ft.Colors.GREEN_700
                     ),
-                    ft.Divider(),
-                    ft.FilledTonalButton(
-                        "Перевести в Постоянное хранилище",
-                        icon=ft.Icons.ARROW_FORWARD,
-                        on_click=self._on_transfer_to_permanent,
-                        style=ft.ButtonStyle(
-                            color=ft.Colors.WHITE,
-                            bgcolor=ft.Colors.BLUE_600
-                        ),
-                        height=60
-                    )
-                ],
-                spacing=15,
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                expand=True
-            ),
-            width=300,
-            padding=15,
-            border_radius=10,
-            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
-            shadow=ft.BoxShadow(
-                spread_radius=1,
-                blur_radius=15,
-                color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
-                offset=ft.Offset(0, 4)
-            )
+                    expand=True
+                ),
+                ft.Divider(),
+                ft.FilledTonalButton(
+                    "Перевести в Постоянное хранилище",
+                    icon=ft.Icons.ARROW_FORWARD,
+                    on_click=self._on_transfer_to_permanent,
+                    style=ft.ButtonStyle(
+                        color=ft.Colors.WHITE,
+                        bgcolor=ft.Colors.BLUE_600
+                    ),
+                    height=60,
+                    expand=True
+                )
+            ],
+            spacing=15,
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+            expand=True
         )
     
     def _build_storage_selector(self) -> ft.Dropdown:
@@ -306,59 +335,48 @@ class LogView:
             options=[ft.dropdown.Option(name) for name in storage_names],
             value=self.app_data.current_storage_name if storage_names else None,
             label="Активное хранилище",
-            width=250
+            expand=True
         )
         # Устанавливаем обработчик после создания
         dropdown.on_change = self._on_storage_changed
         return dropdown
     
-    def _build_right_panel(self) -> ft.Container:
+    def _build_right_panel(self) -> ft.Column:
         """Правая панель: постоянное хранилище"""
-        return ft.Container(
-            content=ft.Column(
-                [
-                    ft.Text("Постоянное хранилище", size=20, weight=ft.FontWeight.BOLD),
-                    ft.Text(
-                        f"Всего трофеев: {len(self.app_data.permanent_storage)}",
-                        size=16,
-                        weight=ft.FontWeight.W_500
-                    ),
-                    ft.Divider(),
-                    ft.Container(
-                        content=ft.ListView(
-                            ref=self.permanent_list_view,
-                            height=400,
-                            spacing=5
-                        ),
-                        border=ft.border.all(1, ft.Colors.OUTLINE_VARIANT),
-                        border_radius=5,
-                        padding=5,
+        return ft.Column(
+            [
+                ft.Text("Постоянное хранилище", size=20, weight=ft.FontWeight.BOLD),
+                ft.Text(
+                    f"Всего трофеев: {len(self.app_data.permanent_storage)}",
+                    size=16,
+                    weight=ft.FontWeight.W_500
+                ),
+                ft.Divider(),
+                ft.Container(
+                    content=ft.ListView(
+                        ref=self.permanent_list_view,
+                        spacing=5,
                         expand=True
                     ),
-                    ft.FilledButton(
-                        "Продать весь улов",
-                        icon=ft.Icons.SELL,
-                        on_click=self._on_sell_all,
-                        style=ft.ButtonStyle(
-                            color=ft.Colors.WHITE,
-                            bgcolor=ft.Colors.RED_700
-                        ),
-                        height=50
-                    )
-                ],
-                spacing=15,
-                expand=True
-            ),
-            width=400,
-            padding=15,
-            border_radius=10,
-            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
-            shadow=ft.BoxShadow(
-                spread_radius=1,
-                blur_radius=15,
-                color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
-                offset=ft.Offset(0, 4)
-            )
+                    border=ft.border.all(1, ft.Colors.OUTLINE_VARIANT),
+                    border_radius=5,
+                    padding=5,
+                    expand=True
+                ),
+                ft.FilledButton(
+                    "Продать весь улов",
+                    icon=ft.Icons.SELL,
+                    on_click=self._on_sell_all,
+                    style=ft.ButtonStyle(
+                        color=ft.Colors.WHITE,
+                        bgcolor=ft.Colors.RED_700
+                    ),
+                    height=50,
+                    expand=True
+                )
+            ],
+            spacing=15,
+            expand=True
         )
     
     def _on_fish_name_selected(self, e):

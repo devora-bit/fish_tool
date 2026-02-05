@@ -41,19 +41,22 @@ class WikiView:
             content=ft.Column(
                 [
                     ft.Text("Справочник рыб", size=28, weight=ft.FontWeight.BOLD),
-                    ft.TextField(
-                        ref=self.search_field,
-                        label="Поиск",
-                        prefix_icon=ft.Icons.SEARCH,
-                        on_change=self._on_search,
-                        hint_text="Введите название рыбы...",
-                        width=400
+                    ft.Container(
+                        content=ft.TextField(
+                            ref=self.search_field,
+                            label="Поиск",
+                            prefix_icon=ft.Icons.SEARCH,
+                            on_change=self._on_search,
+                            hint_text="Введите название рыбы...",
+                            expand=True
+                        ),
+                        width=None
                     ),
                     ft.Container(
                         content=ft.ListView(
                             ref=self.fish_list_view,
-                            height=600,
-                            spacing=10
+                            spacing=10,
+                            expand=True
                         ),
                         expand=True
                     )
@@ -98,30 +101,37 @@ class WikiView:
                                 spacing=15
                             ),
                             ft.Divider(),
-                            ft.Row(
+                            ft.ResponsiveRow(
                                 [
-                                    ft.Column(
-                                        [
-                                            ft.Text("Вес:", size=12, color=ft.Colors.GREY_400),
-                                            ft.Text(f"{weight_range[0]:.1f} - {weight_range[1]:.1f} кг", size=14)
-                                        ],
-                                        spacing=2
+                                    ft.Container(
+                                        content=ft.Column(
+                                            [
+                                                ft.Text("Вес:", size=12, color=ft.Colors.GREY_400),
+                                                ft.Text(f"{weight_range[0]:.1f} - {weight_range[1]:.1f} кг", size=14)
+                                            ],
+                                            spacing=2
+                                        ),
+                                        col={"xs": 12, "sm": 4, "md": 4}
                                     ),
-                                    ft.VerticalDivider(),
-                                    ft.Column(
-                                        [
-                                            ft.Text("Наживка:", size=12, color=ft.Colors.GREY_400),
-                                            ft.Text(fish_data.get("best_bait", "Неизвестно"), size=14)
-                                        ],
-                                        spacing=2
+                                    ft.Container(
+                                        content=ft.Column(
+                                            [
+                                                ft.Text("Наживка:", size=12, color=ft.Colors.GREY_400),
+                                                ft.Text(fish_data.get("best_bait", "Неизвестно"), size=14)
+                                            ],
+                                            spacing=2
+                                        ),
+                                        col={"xs": 12, "sm": 4, "md": 4}
                                     ),
-                                    ft.VerticalDivider(),
-                                    ft.Column(
-                                        [
-                                            ft.Text("Цена:", size=12, color=ft.Colors.GREY_400),
-                                            ft.Text(f"{fish_data.get('price_guide', 0):.0f}", size=14)
-                                        ],
-                                        spacing=2
+                                    ft.Container(
+                                        content=ft.Column(
+                                            [
+                                                ft.Text("Цена:", size=12, color=ft.Colors.GREY_400),
+                                                ft.Text(f"{fish_data.get('price_guide', 0):.0f}", size=14)
+                                            ],
+                                            spacing=2
+                                        ),
+                                        col={"xs": 12, "sm": 4, "md": 4}
                                     )
                                 ],
                                 spacing=10

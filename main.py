@@ -23,9 +23,11 @@ def main(page: ft.Page):
     # Настройка размеров окна
     page.window.width = 1400
     page.window.height = 900
-    page.window.min_width = 1000
+    page.window.min_width = 800
     page.window.min_height = 600
     page.window.resizable = True
+    page.padding = 0
+    page.spacing = 0
     
     # Настройка шрифтов
     page.fonts = {
