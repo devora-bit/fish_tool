@@ -46,7 +46,7 @@ class WikiView:
                         label="Поиск",
                         prefix_icon=ft.Icons.SEARCH,
                         on_change=self._on_search,
-                        hint_text="Введите название рыбы...",
+                        hint_text="Введите название рыбы или наживки...",
                         width=400
                     ),
                     ft.Container(
@@ -113,7 +113,13 @@ class WikiView:
                                     ft.Container(
                                         content=ft.Column(
                                             [
-                                                ft.Text("Наживка:", size=12, color=ft.Colors.GREY_400),
+                                                ft.Row(
+                                                    [
+                                                        ft.Icon(ft.Icons.PEST_CONTROL, size=14, color=ft.Colors.GREY_400),
+                                                        ft.Text("Наживка:", size=12, color=ft.Colors.GREY_400)
+                                                    ],
+                                                    spacing=4
+                                                ),
                                                 ft.Text(fish_data.get("best_bait", "Неизвестно"), size=14)
                                             ],
                                             spacing=2
@@ -143,14 +149,15 @@ class WikiView:
         )
     
     def _on_search(self, e):
-        """Обработчик поиска"""
+        """Обработчик поиска по названию рыбы или наживке"""
         search_term = e.control.value.lower() if e.control.value else ""
         all_fishes = self.fish_reference.get("рыбы", [])
         
         if search_term:
             self.filtered_fishes = [
                 f for f in all_fishes 
-                if search_term in f.get("name", "").lower()
+                if search_term in f.get("name", "").lower() or 
+                   search_term in f.get("best_bait", "").lower()
             ]
         else:
             self.filtered_fishes = all_fishes
