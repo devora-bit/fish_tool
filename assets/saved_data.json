@@ -3,21 +3,10 @@
     {
       "name": "Основное хранилище",
       "limit": 50,
-      "fishes": [
-        {
-          "id": "2130c8c2-4614-4f82-9fb1-7cdf1f1384b4",
-          "name": "Сериола",
-          "rarity": "trophy",
-          "rarity_display": "Зеленая",
-          "weight": 90.0,
-          "timestamp": "2026-01-12T14:13:17.642394",
-          "price_guide": 8000,
-          "best_bait": "Вертушка-пуля",
-          "storage": "temporary"
-        }
-      ]
+      "fishes": []
     }
   ],
   "permanent_storage": [],
-  "current_storage_name": "Основное хранилище"
+  "current_storage_name": "Основное хранилище",
+  "permanent_storage_limit": 100
 }

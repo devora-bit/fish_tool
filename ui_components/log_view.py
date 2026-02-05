@@ -425,6 +425,7 @@ class LogView:
     
     def _on_add_fish(self, e):
         """Добавить рыбу в лог"""
+        print("DEBUG: _on_add_fish вызван!")
         # Получить выбранную редкость
         # Избегаем прямого доступа к selected (set), чтобы не вызывать проблем с сериализацией
         rarity = "common"  # Значение по умолчанию
@@ -503,6 +504,7 @@ class LogView:
     
     def _on_edit_storage(self, e):
         """Редактировать текущее хранилище"""
+        print("DEBUG: _on_edit_storage вызван!")
         current_storage = self.app_data.get_current_storage()
         if not current_storage:
             self._show_snackbar("Нет активного хранилища!", ft.Colors.RED)
@@ -593,6 +595,7 @@ class LogView:
     
     def _on_create_storage(self, e):
         """Создать новое хранилище"""
+        print("DEBUG: _on_create_storage вызван!")
         def close_dialog(dialog):
             dialog.open = False
             self.page.update()
@@ -649,6 +652,7 @@ class LogView:
     
     def _on_transfer_to_permanent(self, e):
         """Перевести все рыбы в постоянное хранилище"""
+        print("DEBUG: _on_transfer_to_permanent вызван!")
         current_storage = self.app_data.get_current_storage()
         if not current_storage or not current_storage.fishes:
             self._show_snackbar("Нет рыбы для переноса!", ft.Colors.ORANGE)
@@ -718,6 +722,7 @@ class LogView:
     
     def _on_configure_permanent_limit(self, e):
         """Настроить лимит постоянного хранилища"""
+        print("DEBUG: _on_configure_permanent_limit вызван!")
         def close_dialog(dialog):
             dialog.open = False
             self.page.update()
@@ -777,6 +782,7 @@ class LogView:
     
     def _on_sell_all(self, e):
         """Продать весь улов"""
+        print("DEBUG: _on_sell_all вызван!")
         if not self.app_data.permanent_storage:
             self._show_snackbar("Нет рыбы для продажи!", ft.Colors.ORANGE)
             return
