@@ -348,14 +348,13 @@ class StatsView:
         return ft.Column(items, spacing=10)
     
     def _build_rarity_pie_chart(self, distribution: dict) -> ft.Column:
-        """Построить круговую диаграмму распределения по редкости"""
+        """Построить визуализацию распределения по редкости"""
         total = sum(distribution.values())
         if total == 0:
             return ft.Column([ft.Text("Нет данных", color=ft.Colors.GREY_400)])
         
-        # Создать секции для круговой диаграммы
-        sections = []
-        legend_items = []
+        # Создать красивую визуализацию с большими круглыми индикаторами
+        items = []
         
         for rarity in ["trophy", "rare", "uncommon", "common"]:
             count = distribution.get(rarity, 0)
@@ -366,64 +365,78 @@ class StatsView:
             color = RARITY_COLORS.get(rarity, RARITY_COLORS["common"])
             name = RARITY_NAMES.get(rarity, "Серая")
             
-            sections.append(
-                ft.PieChartSection(
-                    value=count,
-                    title=f"{percentage:.1f}%",
-                    title_style=ft.TextStyle(
-                        size=14,
-                        color=ft.Colors.WHITE,
-                        weight=ft.FontWeight.BOLD
-                    ),
-                    color=color,
-                    radius=100,
-                    badge=ft.Container(
-                        ft.Text(str(count), size=12, weight=ft.FontWeight.BOLD),
-                        padding=5,
-                        bgcolor=ft.Colors.with_opacity(0.8, ft.Colors.BLACK),
-                        border_radius=5
-                    ),
-                    badge_position=0.7
-                )
-            )
+            # Размер круга зависит от процента
+            size = 60 + (percentage * 1.5)
             
-            # Добавить в легенду
-            legend_items.append(
-                ft.Row(
-                    [
-                        ft.Container(
-                            width=16,
-                            height=16,
-                            bgcolor=color,
-                            border_radius=8
-                        ),
-                        ft.Text(f"{name}: {count} ({percentage:.1f}%)", size=13)
-                    ],
-                    spacing=8
+            items.append(
+                ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.Stack(
+                                [
+                                    # Внешний круг
+                                    ft.Container(
+                                        width=size,
+                                        height=size,
+                                        border_radius=size / 2,
+                                        bgcolor=ft.Colors.with_opacity(0.3, color),
+                                        border=ft.border.all(4, color)
+                                    ),
+                                    # Центральный контент
+                                    ft.Container(
+                                        content=ft.Column(
+                                            [
+                                                ft.Text(
+                                                    f"{percentage:.0f}%",
+                                                    size=18,
+                                                    weight=ft.FontWeight.BOLD,
+                                                    color=color
+                                                ),
+                                                ft.Text(
+                                                    str(count),
+                                                    size=14,
+                                                    color=ft.Colors.GREY_400
+                                                )
+                                            ],
+                                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                            spacing=2
+                                        ),
+                                        width=size,
+                                        height=size,
+                                        alignment=ft.alignment.center
+                                    )
+                                ]
+                            ),
+                            ft.Container(height=8),
+                            ft.Text(
+                                name,
+                                size=14,
+                                weight=ft.FontWeight.W_500,
+                                text_align=ft.TextAlign.CENTER
+                            )
+                        ],
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        spacing=5
+                    ),
+                    padding=10
                 )
             )
         
         return ft.Column(
             [
-                ft.Container(
-                    content=ft.PieChart(
-                        sections=sections,
-                        sections_space=2,
-                        center_space_radius=50,
-                        expand=True
-                    ),
-                    width=280,
-                    height=280
-                ),
-                ft.Container(height=10),
-                ft.Column(legend_items, spacing=8)
+                ft.Row(
+                    items,
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    spacing=20,
+                    wrap=True
+                )
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=10
         )
     
     def _build_top_fishes_pie_chart(self, top_fishes: list) -> ft.Column:
-        """Построить круговую диаграмму топ-5 рыб"""
+        """Построить визуализацию топ-5 рыб"""
         if not top_fishes:
             return ft.Column([ft.Text("Нет данных", color=ft.Colors.GREY_400)])
         
@@ -438,64 +451,78 @@ class StatsView:
         
         total = sum(count for _, count in top_fishes)
         
-        sections = []
-        legend_items = []
+        items = []
         
         for i, (name, count) in enumerate(top_fishes):
             percentage = (count / total * 100)
             color = colors[i % len(colors)]
             
-            sections.append(
-                ft.PieChartSection(
-                    value=count,
-                    title=f"{percentage:.1f}%",
-                    title_style=ft.TextStyle(
-                        size=14,
-                        color=ft.Colors.WHITE,
-                        weight=ft.FontWeight.BOLD
-                    ),
-                    color=color,
-                    radius=100,
-                    badge=ft.Container(
-                        ft.Text(str(count), size=12, weight=ft.FontWeight.BOLD),
-                        padding=5,
-                        bgcolor=ft.Colors.with_opacity(0.8, ft.Colors.BLACK),
-                        border_radius=5
-                    ),
-                    badge_position=0.7
-                )
-            )
+            # Размер круга зависит от процента
+            size = 60 + (percentage * 1.5)
             
-            # Добавить в легенду
-            legend_items.append(
-                ft.Row(
-                    [
-                        ft.Container(
-                            width=16,
-                            height=16,
-                            bgcolor=color,
-                            border_radius=8
-                        ),
-                        ft.Text(f"{name}: {count} ({percentage:.1f}%)", size=13)
-                    ],
-                    spacing=8
+            items.append(
+                ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.Stack(
+                                [
+                                    # Внешний круг
+                                    ft.Container(
+                                        width=size,
+                                        height=size,
+                                        border_radius=size / 2,
+                                        bgcolor=ft.Colors.with_opacity(0.3, color),
+                                        border=ft.border.all(4, color)
+                                    ),
+                                    # Центральный контент
+                                    ft.Container(
+                                        content=ft.Column(
+                                            [
+                                                ft.Text(
+                                                    f"{percentage:.0f}%",
+                                                    size=18,
+                                                    weight=ft.FontWeight.BOLD,
+                                                    color=color
+                                                ),
+                                                ft.Text(
+                                                    str(count),
+                                                    size=14,
+                                                    color=ft.Colors.GREY_400
+                                                )
+                                            ],
+                                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                            spacing=2
+                                        ),
+                                        width=size,
+                                        height=size,
+                                        alignment=ft.alignment.center
+                                    )
+                                ]
+                            ),
+                            ft.Container(height=8),
+                            ft.Text(
+                                name if len(name) <= 12 else name[:12] + "...",
+                                size=13,
+                                weight=ft.FontWeight.W_500,
+                                text_align=ft.TextAlign.CENTER,
+                                max_lines=1
+                            )
+                        ],
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        spacing=5
+                    ),
+                    padding=10
                 )
             )
         
         return ft.Column(
             [
-                ft.Container(
-                    content=ft.PieChart(
-                        sections=sections,
-                        sections_space=2,
-                        center_space_radius=50,
-                        expand=True
-                    ),
-                    width=280,
-                    height=280
-                ),
-                ft.Container(height=10),
-                ft.Column(legend_items, spacing=8)
+                ft.Row(
+                    items,
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    spacing=20,
+                    wrap=True
+                )
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=10

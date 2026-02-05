@@ -41,16 +41,13 @@ class WikiView:
             content=ft.Column(
                 [
                     ft.Text("Справочник рыб", size=28, weight=ft.FontWeight.BOLD),
-                    ft.Container(
-                        content=ft.TextField(
-                            ref=self.search_field,
-                            label="Поиск",
-                            prefix_icon=ft.Icons.SEARCH,
-                            on_change=self._on_search,
-                            hint_text="Введите название рыбы...",
-                            expand=True
-                        ),
-                        width=None
+                    ft.TextField(
+                        ref=self.search_field,
+                        label="Поиск",
+                        prefix_icon=ft.Icons.SEARCH,
+                        on_change=self._on_search,
+                        hint_text="Введите название рыбы...",
+                        width=400
                     ),
                     ft.Container(
                         content=ft.ListView(

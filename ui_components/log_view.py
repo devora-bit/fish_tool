@@ -174,8 +174,7 @@ class LogView:
                     ref=self.fish_name_field,
                     options=[ft.dropdown.Option(name) for name in self.fish_names],
                     hint_text="Выберите или введите название",
-                    autofocus=False,
-                    expand=True
+                    autofocus=False
                 ),
                 
                 # Поле веса
@@ -189,8 +188,7 @@ class LogView:
                             content=ft.TextField(
                                 ref=self.weight_field,
                                 hint_text="Введите вес",
-                                keyboard_type=ft.KeyboardType.NUMBER,
-                                expand=True
+                                keyboard_type=ft.KeyboardType.NUMBER
                             ),
                             col={"xs": 9, "sm": 9}
                         ),
@@ -210,8 +208,7 @@ class LogView:
                     style=ft.ButtonStyle(
                         color=ft.Colors.WHITE,
                         bgcolor=ft.Colors.BLUE_700
-                    ),
-                    expand=True
+                    )
                 )
             ],
             spacing=10
@@ -306,8 +303,7 @@ class LogView:
                     style=ft.ButtonStyle(
                         color=ft.Colors.WHITE,
                         bgcolor=ft.Colors.GREEN_700
-                    ),
-                    expand=True
+                    )
                 ),
                 ft.Divider(),
                 ft.FilledTonalButton(
@@ -318,8 +314,7 @@ class LogView:
                         color=ft.Colors.WHITE,
                         bgcolor=ft.Colors.BLUE_600
                     ),
-                    height=60,
-                    expand=True
+                    height=50
                 )
             ],
             spacing=15,
@@ -334,8 +329,7 @@ class LogView:
             ref=self.storage_dropdown,
             options=[ft.dropdown.Option(name) for name in storage_names],
             value=self.app_data.current_storage_name if storage_names else None,
-            label="Активное хранилище",
-            expand=True
+            label="Активное хранилище"
         )
         # Устанавливаем обработчик после создания
         dropdown.on_change = self._on_storage_changed
@@ -371,8 +365,7 @@ class LogView:
                         color=ft.Colors.WHITE,
                         bgcolor=ft.Colors.RED_700
                     ),
-                    height=50,
-                    expand=True
+                    height=50
                 )
             ],
             spacing=15,
