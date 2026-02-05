@@ -169,11 +169,53 @@ class StatsView:
                 border=ft.border.all(1, ft.Colors.OUTLINE_VARIANT)
             ),
             
-            # Распределение по редкости (круговой график - упрощенная версия)
+            # Круговые диаграммы в ряд
+            ft.ResponsiveRow(
+                [
+                    # Круговая диаграмма по редкости
+                    ft.Container(
+                        content=ft.Column(
+                            [
+                                ft.Text("Распределение по редкости", size=20, weight=ft.FontWeight.BOLD),
+                                ft.Divider(),
+                                self._build_rarity_pie_chart(stats["rarity_distribution"])
+                            ],
+                            spacing=10,
+                            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                        ),
+                        padding=15,
+                        border_radius=10,
+                        bgcolor=ft.Colors.SURFACE,
+                        border=ft.border.all(1, ft.Colors.OUTLINE_VARIANT),
+                        col={"sm": 12, "md": 6, "lg": 6}
+                    ),
+                    
+                    # Круговая диаграмма топ-5 рыб
+                    ft.Container(
+                        content=ft.Column(
+                            [
+                                ft.Text("Топ-5 самых пойманных", size=20, weight=ft.FontWeight.BOLD),
+                                ft.Divider(),
+                                self._build_top_fishes_pie_chart(stats["top_fishes"])
+                            ],
+                            spacing=10,
+                            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                        ),
+                        padding=15,
+                        border_radius=10,
+                        bgcolor=ft.Colors.SURFACE,
+                        border=ft.border.all(1, ft.Colors.OUTLINE_VARIANT),
+                        col={"sm": 12, "md": 6, "lg": 6}
+                    )
+                ],
+                spacing=15
+            ),
+            
+            # Распределение по редкости (прогресс-бары)
             ft.Container(
                 content=ft.Column(
                     [
-                        ft.Text("Распределение по редкости", size=20, weight=ft.FontWeight.BOLD),
+                        ft.Text("Детальная статистика по редкости", size=20, weight=ft.FontWeight.BOLD),
                         ft.Divider(),
                         self._build_rarity_chart(stats["rarity_distribution"])
                     ],
@@ -185,11 +227,11 @@ class StatsView:
                 border=ft.border.all(1, ft.Colors.OUTLINE_VARIANT)
             ),
             
-            # Топ-5 рыб
+            # Топ-5 рыб (прогресс-бары)
             ft.Container(
                 content=ft.Column(
                     [
-                        ft.Text("Топ-5 самых пойманных", size=20, weight=ft.FontWeight.BOLD),
+                        ft.Text("Детальная статистика улова", size=20, weight=ft.FontWeight.BOLD),
                         ft.Divider(),
                         self._build_top_fishes_chart(stats["top_fishes"])
                     ],
@@ -242,13 +284,16 @@ class StatsView:
                 )
             )
             
-            # Прогресс-бар
+            # Прогресс-бар с скругленными углами
             items.append(
-                ft.ProgressBar(
-                    value=percentage / 100,
-                    color=color,
-                    bgcolor=ft.Colors.GREY_300,
-                    height=8
+                ft.Container(
+                    content=ft.ProgressBar(
+                        value=percentage / 100,
+                        color=color,
+                        bgcolor=ft.Colors.GREY_300,
+                        height=12
+                    ),
+                    border_radius=10
                 )
             )
             items.append(ft.Divider(height=1))
@@ -286,11 +331,14 @@ class StatsView:
                             ],
                             spacing=10
                         ),
-                        ft.ProgressBar(
-                            value=bar_width / 100,
-                            color=ft.Colors.BLUE_600,
-                            bgcolor=ft.Colors.GREY_300,
-                            height=20
+                        ft.Container(
+                            content=ft.ProgressBar(
+                                value=bar_width / 100,
+                                color=ft.Colors.BLUE_600,
+                                bgcolor=ft.Colors.GREY_300,
+                                height=24
+                            ),
+                            border_radius=12
                         )
                     ],
                     spacing=5
@@ -298,6 +346,160 @@ class StatsView:
             )
         
         return ft.Column(items, spacing=10)
+    
+    def _build_rarity_pie_chart(self, distribution: dict) -> ft.Column:
+        """Построить круговую диаграмму распределения по редкости"""
+        total = sum(distribution.values())
+        if total == 0:
+            return ft.Column([ft.Text("Нет данных", color=ft.Colors.GREY_400)])
+        
+        # Создать секции для круговой диаграммы
+        sections = []
+        legend_items = []
+        
+        for rarity in ["trophy", "rare", "uncommon", "common"]:
+            count = distribution.get(rarity, 0)
+            if count == 0:
+                continue
+                
+            percentage = (count / total * 100)
+            color = RARITY_COLORS.get(rarity, RARITY_COLORS["common"])
+            name = RARITY_NAMES.get(rarity, "Серая")
+            
+            sections.append(
+                ft.PieChartSection(
+                    value=count,
+                    title=f"{percentage:.1f}%",
+                    title_style=ft.TextStyle(
+                        size=14,
+                        color=ft.Colors.WHITE,
+                        weight=ft.FontWeight.BOLD
+                    ),
+                    color=color,
+                    radius=100,
+                    badge=ft.Container(
+                        ft.Text(str(count), size=12, weight=ft.FontWeight.BOLD),
+                        padding=5,
+                        bgcolor=ft.Colors.with_opacity(0.8, ft.Colors.BLACK),
+                        border_radius=5
+                    ),
+                    badge_position=0.7
+                )
+            )
+            
+            # Добавить в легенду
+            legend_items.append(
+                ft.Row(
+                    [
+                        ft.Container(
+                            width=16,
+                            height=16,
+                            bgcolor=color,
+                            border_radius=8
+                        ),
+                        ft.Text(f"{name}: {count} ({percentage:.1f}%)", size=13)
+                    ],
+                    spacing=8
+                )
+            )
+        
+        return ft.Column(
+            [
+                ft.Container(
+                    content=ft.PieChart(
+                        sections=sections,
+                        sections_space=2,
+                        center_space_radius=50,
+                        expand=True
+                    ),
+                    width=280,
+                    height=280
+                ),
+                ft.Container(height=10),
+                ft.Column(legend_items, spacing=8)
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=10
+        )
+    
+    def _build_top_fishes_pie_chart(self, top_fishes: list) -> ft.Column:
+        """Построить круговую диаграмму топ-5 рыб"""
+        if not top_fishes:
+            return ft.Column([ft.Text("Нет данных", color=ft.Colors.GREY_400)])
+        
+        # Цвета для топ-5
+        colors = [
+            "#3B82F6",  # blue-500
+            "#8B5CF6",  # violet-500
+            "#EC4899",  # pink-500
+            "#F59E0B",  # amber-500
+            "#10B981"   # emerald-500
+        ]
+        
+        total = sum(count for _, count in top_fishes)
+        
+        sections = []
+        legend_items = []
+        
+        for i, (name, count) in enumerate(top_fishes):
+            percentage = (count / total * 100)
+            color = colors[i % len(colors)]
+            
+            sections.append(
+                ft.PieChartSection(
+                    value=count,
+                    title=f"{percentage:.1f}%",
+                    title_style=ft.TextStyle(
+                        size=14,
+                        color=ft.Colors.WHITE,
+                        weight=ft.FontWeight.BOLD
+                    ),
+                    color=color,
+                    radius=100,
+                    badge=ft.Container(
+                        ft.Text(str(count), size=12, weight=ft.FontWeight.BOLD),
+                        padding=5,
+                        bgcolor=ft.Colors.with_opacity(0.8, ft.Colors.BLACK),
+                        border_radius=5
+                    ),
+                    badge_position=0.7
+                )
+            )
+            
+            # Добавить в легенду
+            legend_items.append(
+                ft.Row(
+                    [
+                        ft.Container(
+                            width=16,
+                            height=16,
+                            bgcolor=color,
+                            border_radius=8
+                        ),
+                        ft.Text(f"{name}: {count} ({percentage:.1f}%)", size=13)
+                    ],
+                    spacing=8
+                )
+            )
+        
+        return ft.Column(
+            [
+                ft.Container(
+                    content=ft.PieChart(
+                        sections=sections,
+                        sections_space=2,
+                        center_space_radius=50,
+                        expand=True
+                    ),
+                    width=280,
+                    height=280
+                ),
+                ft.Container(height=10),
+                ft.Column(legend_items, spacing=8)
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=10
+        )
     
     def refresh(self):
         """Обновить отображение"""
