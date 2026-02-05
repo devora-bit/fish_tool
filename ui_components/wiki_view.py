@@ -81,7 +81,7 @@ class WikiView:
                                     ft.Column(
                                         [
                                             ft.Text(fish_data["name"], size=18, weight=ft.FontWeight.BOLD),
-                                            ft.Text(description, size=13, color=ft.Colors.GREY_400, italic=True)
+                                            ft.Text(description, size=13, color=ft.Colors.GREY_400, weight=ft.FontWeight.BOLD)
                                         ],
                                         spacing=5,
                                         expand=True
