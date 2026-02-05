@@ -104,7 +104,7 @@ class WikiView:
                                         content=ft.Column(
                                             [
                                                 ft.Text("Вес:", size=12, color=ft.Colors.GREY_400),
-                                                ft.Text(f"{weight_range[0]:.1f} - {weight_range[1]:.1f} кг", size=14)
+                                                ft.Text("зависит от вашей удачи", size=14, italic=True, color=ft.Colors.GREY_300)
                                             ],
                                             spacing=2
                                         ),
