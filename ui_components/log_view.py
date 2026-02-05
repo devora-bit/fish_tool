@@ -296,14 +296,30 @@ class LogView:
             [
                 ft.Text("Управление хранилищами", size=20, weight=ft.FontWeight.BOLD),
                 self._build_storage_selector(),
-                ft.ElevatedButton(
-                    "Создать новое хранилище",
-                    icon=ft.Icons.ADD_BOX,
-                    on_click=self._on_create_storage,
-                    style=ft.ButtonStyle(
-                        color=ft.Colors.WHITE,
-                        bgcolor=ft.Colors.GREEN_700
-                    )
+                ft.Row(
+                    [
+                        ft.ElevatedButton(
+                            "Создать",
+                            icon=ft.Icons.ADD_BOX,
+                            on_click=self._on_create_storage,
+                            style=ft.ButtonStyle(
+                                color=ft.Colors.WHITE,
+                                bgcolor=ft.Colors.GREEN_700
+                            ),
+                            expand=True
+                        ),
+                        ft.ElevatedButton(
+                            "Настроить",
+                            icon=ft.Icons.SETTINGS,
+                            on_click=self._on_edit_storage,
+                            style=ft.ButtonStyle(
+                                color=ft.Colors.WHITE,
+                                bgcolor=ft.Colors.BLUE_GREY_700
+                            ),
+                            expand=True
+                        )
+                    ],
+                    spacing=10
                 ),
                 ft.Divider(),
                 ft.FilledTonalButton(
@@ -484,6 +500,89 @@ class LogView:
         self.refresh()
         self.on_data_changed()
         self._show_snackbar(f"Рыба '{fish_name}' добавлена!", ft.Colors.GREEN)
+    
+    def _on_edit_storage(self, e):
+        """Редактировать текущее хранилище"""
+        current_storage = self.app_data.get_current_storage()
+        if not current_storage:
+            self._show_snackbar("Нет активного хранилища!", ft.Colors.RED)
+            return
+        
+        def close_dialog(dialog):
+            dialog.open = False
+            self.page.update()
+        
+        def on_confirm(dialog):
+            new_name = name_field.value
+            try:
+                new_limit = int(limit_field.value or str(current_storage.limit))
+                if new_limit <= 0:
+                    self._show_snackbar("Лимит должен быть больше 0!", ft.Colors.RED)
+                    return
+                
+                # Проверка: если новый лимит меньше текущего количества рыб
+                if new_limit < len(current_storage.fishes):
+                    self._show_snackbar(
+                        f"Невозможно установить лимит {new_limit}! Сейчас в хранилище {len(current_storage.fishes)} рыб.",
+                        ft.Colors.RED
+                    )
+                    return
+                
+                old_name = current_storage.name
+                
+                # Обновить данные
+                if new_name and new_name.strip() and new_name.strip() != old_name:
+                    # Проверить, что новое имя не занято
+                    if any(s.name == new_name.strip() for s in self.app_data.temporary_storages if s.name != old_name):
+                        self._show_snackbar("Хранилище с таким названием уже существует!", ft.Colors.RED)
+                        return
+                    current_storage.name = new_name.strip()
+                    self.app_data.current_storage_name = new_name.strip()
+                
+                current_storage.limit = new_limit
+                
+                self.data_manager.save_app_data(self.app_data)
+                close_dialog(dialog)
+                self.refresh()
+                self.on_data_changed()
+                self._show_snackbar(f"Хранилище обновлено!", ft.Colors.GREEN)
+            except ValueError:
+                self._show_snackbar("Введите корректное число для лимита!", ft.Colors.RED)
+        
+        name_field = ft.TextField(
+            label="Название хранилища", 
+            value=current_storage.name,
+            hint_text="Новое название (оставьте пустым, чтобы не менять)"
+        )
+        limit_field = ft.TextField(
+            label="Лимит (макс. количество рыб)", 
+            value=str(current_storage.limit),
+            keyboard_type=ft.KeyboardType.NUMBER,
+            hint_text=f"Минимум: {len(current_storage.fishes)} (текущее количество)",
+            autofocus=True
+        )
+        
+        dialog = ft.AlertDialog(
+            title=ft.Text(f"Настройка: {current_storage.name}"),
+            content=ft.Column(
+                [
+                    ft.Text(f"Текущее количество рыб: {len(current_storage.fishes)}", size=13, color=ft.Colors.GREY_400),
+                    name_field,
+                    limit_field
+                ],
+                tight=True,
+                width=300,
+                spacing=10
+            ),
+            actions=[
+                ft.TextButton("Отмена", on_click=lambda _: close_dialog(dialog)),
+                ft.FilledButton("Сохранить", on_click=lambda _: on_confirm(dialog))
+            ],
+            actions_alignment=ft.MainAxisAlignment.END
+        )
+        self.page.dialog = dialog
+        dialog.open = True
+        self.page.update()
     
     def _on_storage_changed(self, e):
         """Обработчик смены хранилища"""
