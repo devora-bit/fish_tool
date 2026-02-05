@@ -69,9 +69,7 @@ class WikiView:
     def _build_fish_card(self, fish_data: dict) -> ft.Container:
         """Создать карточку рыбы из справочника"""
         rarity = fish_data.get("rarity", "common")
-        rarity_color = RARITY_COLORS.get(rarity, RARITY_COLORS["common"])
         rarity_name = RARITY_NAMES.get(rarity, "Серая")
-        weight_range = fish_data.get("weight_range", [0, 1])
         
         return ft.Container(
             content=ft.Card(
@@ -80,16 +78,11 @@ class WikiView:
                         [
                             ft.Row(
                                 [
-                                    ft.Icon(ft.Icons.WATER_DROP, color=rarity_color, size=30),
+                                    ft.Icon(ft.Icons.WATER_DROP, color=ft.Colors.BLUE_400, size=30),
                                     ft.Column(
                                         [
                                             ft.Text(fish_data["name"], size=18, weight=ft.FontWeight.BOLD),
-                                            ft.Container(
-                                                ft.Text(rarity_name, size=12),
-                                                padding=ft.padding.symmetric(horizontal=10, vertical=4),
-                                                bgcolor=rarity_color,
-                                                border_radius=5
-                                            )
+                                            ft.Text(f"Вид: {rarity_name}", size=13, color=ft.Colors.GREY_400)
                                         ],
                                         spacing=5,
                                         expand=True
@@ -104,7 +97,7 @@ class WikiView:
                                         content=ft.Column(
                                             [
                                                 ft.Text("Вес:", size=12, color=ft.Colors.GREY_400),
-                                                ft.Text("зависит от вашей удачи", size=14, italic=True, color=ft.Colors.GREY_300)
+                                                ft.Text("зависит от вашей удачи", size=14, weight=ft.FontWeight.BOLD)
                                             ],
                                             spacing=2
                                         ),
