@@ -260,92 +260,67 @@ class StatsView:
             name = RARITY_NAMES.get(rarity, "Серая")
             
             items.append(
-                ft.ResponsiveRow(
-                    [
-                        ft.Container(
-                            content=ft.Container(
-                                width=20,
-                                height=20,
-                                bgcolor=color,
-                                border_radius=10
-                            ),
-                            col={"xs": 1, "sm": 1}
-                        ),
-                        ft.Container(
-                            content=ft.Text(name, size=14),
-                            col={"xs": 7, "sm": 8}
-                        ),
-                        ft.Container(
-                            content=ft.Text(f"{count} ({percentage:.1f}%)", size=14, weight=ft.FontWeight.W_500),
-                            col={"xs": 4, "sm": 3}
-                        )
-                    ],
-                    spacing=10
-                )
-            )
-            
-            # Прогресс-бар с скругленными углами
-            items.append(
                 ft.Container(
-                    content=ft.ProgressBar(
-                        value=percentage / 100,
-                        color=color,
-                        bgcolor=ft.Colors.GREY_300,
-                        height=12
+                    content=ft.Row(
+                        [
+                            ft.Container(
+                                width=16,
+                                height=16,
+                                bgcolor=color,
+                                border_radius=8
+                            ),
+                            ft.Text("—", size=14, color=ft.Colors.GREY_500),
+                            ft.Text(f"{name}: {count} шт. ({percentage:.1f}%)", size=14, weight=ft.FontWeight.W_400)
+                        ],
+                        spacing=8
                     ),
-                    border_radius=10
+                    padding=ft.padding.symmetric(vertical=8)
                 )
             )
-            items.append(ft.Divider(height=1))
         
-        return ft.Column(items, spacing=5)
+        return ft.Column(items, spacing=2)
     
     def _build_top_fishes_chart(self, top_fishes: list) -> ft.Column:
         """Построить график топ-5 рыб"""
         if not top_fishes:
             return ft.Column([ft.Text("Нет данных", color=ft.Colors.GREY_400)])
         
-        max_count = top_fishes[0][1] if top_fishes else 1
+        # Цвета для топ-5
+        colors = [
+            "#3B82F6",  # blue-500
+            "#8B5CF6",  # violet-500
+            "#EC4899",  # pink-500
+            "#F59E0B",  # amber-500
+            "#10B981"   # emerald-500
+        ]
+        
+        total = sum(count for _, count in top_fishes)
         
         items = []
         for i, (name, count) in enumerate(top_fishes, 1):
-            bar_width = (count / max_count) * 100 if max_count > 0 else 0
+            percentage = (count / total * 100)
+            color = colors[i % len(colors)]
             
             items.append(
-                ft.Column(
-                    [
-                        ft.ResponsiveRow(
-                            [
-                                ft.Container(
-                                    content=ft.Text(f"{i}.", size=14),
-                                    col={"xs": 1, "sm": 1}
-                                ),
-                                ft.Container(
-                                    content=ft.Text(name, size=14),
-                                    col={"xs": 9, "sm": 10}
-                                ),
-                                ft.Container(
-                                    content=ft.Text(str(count), size=14, weight=ft.FontWeight.W_500),
-                                    col={"xs": 2, "sm": 1}
-                                )
-                            ],
-                            spacing=10
-                        ),
-                        ft.Container(
-                            content=ft.ProgressBar(
-                                value=bar_width / 100,
-                                color=ft.Colors.BLUE_600,
-                                bgcolor=ft.Colors.GREY_300,
-                                height=24
+                ft.Container(
+                    content=ft.Row(
+                        [
+                            ft.Container(
+                                width=16,
+                                height=16,
+                                bgcolor=color,
+                                border_radius=8
                             ),
-                            border_radius=12
-                        )
-                    ],
-                    spacing=5
+                            ft.Text("—", size=14, color=ft.Colors.GREY_500),
+                            ft.Text(f"{name}: {count} шт. ({percentage:.1f}%)", size=14, weight=ft.FontWeight.W_400)
+                        ],
+                        spacing=8
+                    ),
+                    padding=ft.padding.symmetric(vertical=8)
                 )
             )
         
-        return ft.Column(items, spacing=10)
+        return ft.Column(items, spacing=2)
     
     def _build_rarity_pie_chart(self, distribution: dict) -> ft.Column:
         """Построить визуализацию распределения по редкости"""
