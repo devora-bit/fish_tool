@@ -403,7 +403,7 @@ class StatsView:
                                         ),
                                         width=size,
                                         height=size,
-                                        alignment=ft.alignment.center
+                                        padding=ft.padding.only(top=size/3.5)
                                     )
                                 ]
                             ),
@@ -495,7 +495,7 @@ class StatsView:
                                         ),
                                         width=size,
                                         height=size,
-                                        alignment=ft.alignment.center
+                                        padding=ft.padding.only(top=size/3.5)
                                     )
                                 ]
                             ),
