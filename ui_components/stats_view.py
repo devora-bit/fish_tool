@@ -255,6 +255,9 @@ class StatsView:
         items = []
         for rarity in ["trophy", "rare", "uncommon", "common"]:
             count = distribution.get(rarity, 0)
+            if count == 0:  # Не показывать редкости с нулевым количеством
+                continue
+                
             percentage = (count / total * 100) if total > 0 else 0
             color = RARITY_COLORS.get(rarity, RARITY_COLORS["common"])
             name = RARITY_NAMES.get(rarity, "Серая")
