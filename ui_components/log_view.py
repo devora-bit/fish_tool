@@ -40,8 +40,11 @@ class LogView:
         self.storage_dropdown = ft.Ref[ft.Dropdown]()
         self.fish_list_view = ft.Ref[ft.ListView]()
         self.progress_bar = ft.Ref[ft.ProgressBar]()
+        self.progress_text = ft.Ref[ft.Text]()  # Текст заполнения временного хранилища
         self.warning_banner = ft.Ref[ft.Banner]()
         self.permanent_list_view = ft.Ref[ft.ListView]()
+        self.permanent_progress_bar = ft.Ref[ft.ProgressBar]()  # Прогресс постоянного хранилища
+        self.permanent_progress_text = ft.Ref[ft.Text]()  # Текст заполнения постоянного хранилища
         
         # Флаг для отслеживания показанного предупреждения
         self._last_warning_percentage = {}  # {storage_name: last_shown_percentage}
@@ -177,7 +180,7 @@ class LogView:
                     autofocus=False
                 ),
                 
-                # Поле веса
+                # Поле веса (в граммах)
                 ft.ResponsiveRow(
                     [
                         ft.Container(
@@ -187,14 +190,14 @@ class LogView:
                         ft.Container(
                             content=ft.TextField(
                                 ref=self.weight_field,
-                                hint_text="Введите вес",
+                                hint_text="Введите вес в граммах",
                                 keyboard_type=ft.KeyboardType.NUMBER
                             ),
-                            col={"xs": 9, "sm": 9}
+                            col={"xs": 8, "sm": 8}
                         ),
                         ft.Container(
-                            content=ft.Text("кг", size=14, color=ft.Colors.GREY_600),
-                            col={"xs": 1, "sm": 1}
+                            content=ft.Text("г", size=14, color=ft.Colors.GREY_600),
+                            col={"xs": 2, "sm": 2}
                         )
                     ],
                     spacing=10
@@ -270,15 +273,17 @@ class LogView:
         if warning_text:
             content_list.append(warning_text)
         
+        current_weight_kg = current_storage.get_total_weight_kg()
         content_list.extend([
             ft.ProgressBar(
                 ref=self.progress_bar,
-                value=fill_percentage / 100,
+                value=min(fill_percentage / 100, 1.0),
                 color=ft.Colors.RED if is_warning else ft.Colors.BLUE,
                 bgcolor=ft.Colors.GREY_300
             ),
             ft.Text(
-                f"Заполнено: {len(current_storage.fishes)}/{current_storage.limit} ({fill_percentage:.1f}%)",
+                ref=self.progress_text,
+                value=f"Заполнено: {current_weight_kg:.2f} / {current_storage.limit:.1f} кг ({fill_percentage:.1f}%) • {len(current_storage.fishes)} шт",
                 size=12
             )
         ])
@@ -320,6 +325,15 @@ class LogView:
                         )
                     ],
                     spacing=10
+                ),
+                ft.ElevatedButton(
+                    "Удалить хранилище",
+                    icon=ft.Icons.DELETE,
+                    on_click=self._on_delete_storage,
+                    style=ft.ButtonStyle(
+                        color=ft.Colors.WHITE,
+                        bgcolor=ft.Colors.RED_700
+                    )
                 ),
                 ft.Divider(),
                 ft.FilledTonalButton(
@@ -373,12 +387,14 @@ class LogView:
                 ft.Column(
                     [
                         ft.Text(
-                            f"Заполнено: {len(self.app_data.permanent_storage)}/{self.app_data.permanent_storage_limit}",
+                            ref=self.permanent_progress_text,
+                            value=f"Заполнено: {self.app_data.get_permanent_total_weight_kg():.2f} / {self.app_data.permanent_storage_limit:.1f} кг • {len(self.app_data.permanent_storage)} шт",
                             size=14,
                             weight=ft.FontWeight.W_500
                         ),
                         ft.ProgressBar(
-                            value=fill_percentage / 100,
+                            ref=self.permanent_progress_bar,
+                            value=min(fill_percentage / 100, 1.0),
                             color=ft.Colors.RED if is_warning else ft.Colors.GREEN,
                             bgcolor=ft.Colors.GREY_300,
                             height=8
@@ -479,9 +495,14 @@ class LogView:
                 self._show_snackbar("Ошибка: нет активного хранилища!", ft.Colors.RED)
                 return
             
-            # Проверить лимит
-            if len(current_storage.fishes) >= current_storage.limit:
-                self._show_snackbar("Хранилище заполнено! Переведите рыбу в постоянное хранилище.", ft.Colors.RED)
+            # Проверить лимит по весу (вес в граммах, лимит в кг)
+            weight_kg = weight / 1000
+            if current_storage.get_total_weight_kg() + weight_kg > current_storage.limit:
+                available = current_storage.get_available_weight_kg()
+                self._show_snackbar(
+                    f"Недостаточно места! Доступно: {available:.2f} кг, пытаетесь добавить: {weight_kg:.2f} кг",
+                    ft.Colors.RED
+                )
                 return
             
             current_storage.fishes.append(fish)
@@ -514,22 +535,36 @@ class LogView:
             self._show_snackbar("Нет активного хранилища!", ft.Colors.RED)
             return
         
-        def close_dialog(dialog):
-            dialog.open = False
-            self.page.update()
+        current_weight_kg = current_storage.get_total_weight_kg()
         
-        def on_confirm(dialog):
+        name_field = ft.TextField(
+            label="Название хранилища", 
+            value=current_storage.name,
+            hint_text="Новое название (оставьте пустым, чтобы не менять)"
+        )
+        limit_field = ft.TextField(
+            label="Лимит вместимости (кг)", 
+            value=str(current_storage.limit),
+            keyboard_type=ft.KeyboardType.NUMBER,
+            hint_text=f"Минимум: {current_weight_kg:.2f} кг (текущий вес)",
+            autofocus=True
+        )
+        
+        def on_cancel(e):
+            self._close_dialog(dialog)
+        
+        def on_confirm(e):
             new_name = name_field.value
             try:
-                new_limit = int(limit_field.value or str(current_storage.limit))
+                new_limit = float(limit_field.value or str(current_storage.limit))
                 if new_limit <= 0:
                     self._show_snackbar("Лимит должен быть больше 0!", ft.Colors.RED)
                     return
                 
-                # Проверка: если новый лимит меньше текущего количества рыб
-                if new_limit < len(current_storage.fishes):
+                # Проверка: если новый лимит меньше текущего веса
+                if new_limit < current_weight_kg:
                     self._show_snackbar(
-                        f"Невозможно установить лимит {new_limit}! Сейчас в хранилище {len(current_storage.fishes)} рыб.",
+                        f"Невозможно установить лимит {new_limit:.1f} кг! Текущий вес: {current_weight_kg:.2f} кг.",
                         ft.Colors.RED
                     )
                     return
@@ -548,31 +583,19 @@ class LogView:
                 current_storage.limit = new_limit
                 
                 self.data_manager.save_app_data(self.app_data)
-                close_dialog(dialog)
+                self._close_dialog(dialog)
                 self.refresh()
                 self.on_data_changed()
                 self._show_snackbar(f"Хранилище обновлено!", ft.Colors.GREEN)
             except ValueError:
                 self._show_snackbar("Введите корректное число для лимита!", ft.Colors.RED)
         
-        name_field = ft.TextField(
-            label="Название хранилища", 
-            value=current_storage.name,
-            hint_text="Новое название (оставьте пустым, чтобы не менять)"
-        )
-        limit_field = ft.TextField(
-            label="Лимит (макс. количество рыб)", 
-            value=str(current_storage.limit),
-            keyboard_type=ft.KeyboardType.NUMBER,
-            hint_text=f"Минимум: {len(current_storage.fishes)} (текущее количество)",
-            autofocus=True
-        )
-        
         dialog = ft.AlertDialog(
+            modal=True,
             title=ft.Text(f"Настройка: {current_storage.name}"),
             content=ft.Column(
                 [
-                    ft.Text(f"Текущее количество рыб: {len(current_storage.fishes)}", size=13, color=ft.Colors.GREY_400),
+                    ft.Text(f"Текущий вес: {current_weight_kg:.2f} кг ({len(current_storage.fishes)} шт)", size=13, color=ft.Colors.GREY_400),
                     name_field,
                     limit_field
                 ],
@@ -581,14 +604,82 @@ class LogView:
                 spacing=10
             ),
             actions=[
-                ft.TextButton("Отмена", on_click=lambda _: close_dialog(dialog)),
-                ft.FilledButton("Сохранить", on_click=lambda _: on_confirm(dialog))
+                ft.TextButton("Отмена", on_click=on_cancel),
+                ft.FilledButton("Сохранить", on_click=on_confirm)
             ],
             actions_alignment=ft.MainAxisAlignment.END
         )
-        self.page.dialog = dialog
-        dialog.open = True
-        self.page.update()
+        print("DEBUG: Открываю диалог редактирования...")
+        self._open_dialog(dialog)
+    
+    def _on_delete_storage(self, e):
+        """Удалить текущее временное хранилище"""
+        print("DEBUG: _on_delete_storage вызван!")
+        current_storage = self.app_data.get_current_storage()
+        if not current_storage:
+            self._show_snackbar("Нет активного хранилища!", ft.Colors.RED)
+            return
+        
+        # Нельзя удалить последнее хранилище
+        if len(self.app_data.temporary_storages) <= 1:
+            self._show_snackbar("Нельзя удалить последнее хранилище!", ft.Colors.RED)
+            return
+        
+        fish_count = len(current_storage.fishes)
+        weight_kg = current_storage.get_total_weight_kg()
+        storage_name = current_storage.name
+        
+        def on_cancel(e):
+            self._close_dialog(dialog)
+        
+        def on_confirm(e):
+            # Удалить хранилище
+            self.app_data.temporary_storages = [
+                s for s in self.app_data.temporary_storages if s.name != storage_name
+            ]
+            
+            # Переключиться на первое доступное хранилище
+            if self.app_data.temporary_storages:
+                self.app_data.current_storage_name = self.app_data.temporary_storages[0].name
+            
+            self.data_manager.save_app_data(self.app_data)
+            self._close_dialog(dialog)
+            self.refresh()
+            self.on_data_changed()
+            self._show_snackbar(f"Хранилище '{storage_name}' удалено!", ft.Colors.GREEN)
+        
+        # Предупреждение, если в хранилище есть рыба
+        warning_text = ""
+        if fish_count > 0:
+            warning_text = f"\n\n⚠️ В хранилище {fish_count} рыб ({weight_kg:.2f} кг)!\nОни будут потеряны!"
+        
+        dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Удалить хранилище?"),
+            content=ft.Column(
+                [
+                    ft.Text(f"Удалить хранилище '{storage_name}'?", size=14),
+                    ft.Text(
+                        warning_text if warning_text else "Хранилище пустое.",
+                        size=13,
+                        color=ft.Colors.RED if warning_text else ft.Colors.GREY_400
+                    )
+                ],
+                tight=True,
+                spacing=5
+            ),
+            actions=[
+                ft.TextButton("Отмена", on_click=on_cancel),
+                ft.FilledButton(
+                    "Удалить",
+                    on_click=on_confirm,
+                    style=ft.ButtonStyle(bgcolor=ft.Colors.RED_700)
+                )
+            ],
+            actions_alignment=ft.MainAxisAlignment.END
+        )
+        print("DEBUG: Открываю диалог удаления...")
+        self._open_dialog(dialog)
     
     def _on_storage_changed(self, e):
         """Обработчик смены хранилища"""
@@ -597,22 +688,59 @@ class LogView:
         self.refresh()
         self.on_data_changed()
     
+    def _open_dialog(self, dialog):
+        """Универсальный метод открытия диалога для разных версий Flet"""
+        try:
+            # Flet 0.21+ требует добавления в overlay
+            if dialog not in self.page.overlay:
+                self.page.overlay.append(dialog)
+            dialog.open = True
+            self.page.update()
+        except Exception as ex:
+            print(f"DEBUG: Ошибка при открытии диалога: {ex}")
+            # Альтернативный способ
+            try:
+                self.page.dialog = dialog
+                dialog.open = True
+                self.page.update()
+            except Exception as ex2:
+                print(f"DEBUG: Альтернативный способ тоже не сработал: {ex2}")
+    
+    def _close_dialog(self, dialog):
+        """Универсальный метод закрытия диалога"""
+        try:
+            dialog.open = False
+            self.page.update()
+        except Exception as ex:
+            print(f"DEBUG: Ошибка при закрытии диалога: {ex}")
+    
     def _on_create_storage(self, e):
         """Создать новое хранилище"""
         print("DEBUG: _on_create_storage вызван!")
         try:
-            def close_dialog(dialog):
-                dialog.open = False
-                self.page.update()
+            name_field = ft.TextField(
+                label="Название хранилища", 
+                autofocus=True,
+                hint_text="Например: Озеро, Река, Море"
+            )
+            limit_field = ft.TextField(
+                label="Лимит вместимости (кг)", 
+                value="50", 
+                keyboard_type=ft.KeyboardType.NUMBER,
+                hint_text="По умолчанию: 50 кг"
+            )
             
-            def on_confirm(dialog):
+            def on_cancel(e):
+                self._close_dialog(dialog)
+            
+            def on_confirm(e):
                 name = name_field.value
                 try:
-                    limit = int(limit_field.value or "50")
+                    limit = float(limit_field.value or "50")
                     if limit <= 0:
-                        limit = 50
+                        limit = 50.0
                 except ValueError:
-                    limit = 50
+                    limit = 50.0
                 
                 if name and name.strip():
                     new_storage = TemporaryStorage(
@@ -623,38 +751,26 @@ class LogView:
                     self.app_data.temporary_storages.append(new_storage)
                     self.app_data.current_storage_name = name.strip()
                     self.data_manager.save_app_data(self.app_data)
-                    close_dialog(dialog)
+                    self._close_dialog(dialog)
                     self.refresh()
                     self.on_data_changed()
-                    self._show_snackbar(f"Хранилище '{name.strip()}' создано (лимит: {limit} рыб)", ft.Colors.GREEN)
+                    self._show_snackbar(f"Хранилище '{name.strip()}' создано (лимит: {limit:.1f} кг)", ft.Colors.GREEN)
                 else:
                     self._show_snackbar("Введите название хранилища!", ft.Colors.RED)
-            
-            name_field = ft.TextField(
-                label="Название хранилища", 
-                autofocus=True,
-                hint_text="Например: Озеро, Река, Море"
-            )
-            limit_field = ft.TextField(
-                label="Лимит (макс. количество рыб)", 
-                value="50", 
-                keyboard_type=ft.KeyboardType.NUMBER,
-                hint_text="По умолчанию: 50"
-            )
         
             dialog = ft.AlertDialog(
                 modal=True,
                 title=ft.Text("Создать новое хранилище"),
                 content=ft.Column([name_field, limit_field], tight=True, width=300, spacing=15),
                 actions=[
-                    ft.TextButton("Отмена", on_click=lambda _: close_dialog(dialog)),
-                    ft.FilledButton("Создать", on_click=lambda _: on_confirm(dialog))
+                    ft.TextButton("Отмена", on_click=on_cancel),
+                    ft.FilledButton("Создать", on_click=on_confirm)
                 ],
                 actions_alignment=ft.MainAxisAlignment.END
             )
-            print("DEBUG: Диалог создан")
-            self.page.open(dialog)
-            print("DEBUG: Диалог открыт через page.open()")
+            print("DEBUG: Диалог создан, открываю...")
+            self._open_dialog(dialog)
+            print("DEBUG: Диалог открыт")
         except Exception as ex:
             print(f"ERROR в _on_create_storage: {ex}")
             import traceback
@@ -669,26 +785,26 @@ class LogView:
             self._show_snackbar("Нет рыбы для переноса!", ft.Colors.ORANGE)
             return
         
-        # Проверка лимита постоянного хранилища
-        fish_to_transfer = len(current_storage.fishes)
-        current_permanent = len(self.app_data.permanent_storage)
-        permanent_limit = self.app_data.permanent_storage_limit
+        # Проверка лимита постоянного хранилища по весу
+        weight_to_transfer_kg = current_storage.get_total_weight_kg()
+        current_permanent_kg = self.app_data.get_permanent_total_weight_kg()
+        permanent_limit_kg = self.app_data.permanent_storage_limit
+        available_kg = self.app_data.get_permanent_available_weight_kg()
         
-        if current_permanent + fish_to_transfer > permanent_limit:
-            available_space = permanent_limit - current_permanent
+        if current_permanent_kg + weight_to_transfer_kg > permanent_limit_kg:
             self._show_snackbar(
-                f"Недостаточно места! Доступно мест: {available_space}, пытаетесь перенести: {fish_to_transfer}",
+                f"Недостаточно места! Доступно: {available_kg:.2f} кг, пытаетесь перенести: {weight_to_transfer_kg:.2f} кг",
                 ft.Colors.RED
             )
             return
         
-        def close_dialog(dialog):
-            dialog.open = False
-            self.page.update()
+        def on_cancel(e):
+            self._close_dialog(dialog)
         
-        def on_confirm(dialog):
-            # Сохранить количество перед переносом
+        def on_confirm(e):
+            # Сохранить данные перед переносом
             fish_count = len(current_storage.fishes)
+            weight_kg = current_storage.get_total_weight_kg()
             
             # Переместить все рыбы
             for fish in current_storage.fishes:
@@ -699,21 +815,22 @@ class LogView:
             current_storage.fishes.clear()
             
             self.data_manager.save_app_data(self.app_data)
-            close_dialog(dialog)
+            self._close_dialog(dialog)
             self.refresh()
             self.on_data_changed()
-            self._show_snackbar(f"Переведено {fish_count} рыб в постоянное хранилище!", ft.Colors.GREEN)
+            self._show_snackbar(f"Переведено {fish_count} рыб ({weight_kg:.2f} кг) в постоянное хранилище!", ft.Colors.GREEN)
         
         dialog = ft.AlertDialog(
+            modal=True,
             title=ft.Text("Подтверждение переноса"),
             content=ft.Column(
                 [
                     ft.Text(
-                        f"Перевести все {len(current_storage.fishes)} рыб из '{current_storage.name}' в постоянное хранилище?",
+                        f"Перевести {len(current_storage.fishes)} рыб ({weight_to_transfer_kg:.2f} кг) из '{current_storage.name}'?",
                         size=14
                     ),
                     ft.Text(
-                        f"Свободно мест: {permanent_limit - current_permanent}",
+                        f"Свободно: {available_kg:.2f} кг",
                         size=12,
                         color=ft.Colors.GREY_400
                     )
@@ -722,59 +839,61 @@ class LogView:
                 spacing=5
             ),
             actions=[
-                ft.TextButton("Отмена", on_click=lambda _: close_dialog(dialog)),
-                ft.FilledButton("Подтвердить", on_click=lambda _: on_confirm(dialog))
+                ft.TextButton("Отмена", on_click=on_cancel),
+                ft.FilledButton("Подтвердить", on_click=on_confirm)
             ],
             actions_alignment=ft.MainAxisAlignment.END
         )
-        self.page.dialog = dialog
-        dialog.open = True
-        self.page.update()
+        print("DEBUG: Открываю диалог переноса...")
+        self._open_dialog(dialog)
     
     def _on_configure_permanent_limit(self, e):
         """Настроить лимит постоянного хранилища"""
         print("DEBUG: _on_configure_permanent_limit вызван!")
-        def close_dialog(dialog):
-            dialog.open = False
-            self.page.update()
         
-        def on_confirm(dialog):
+        current_weight_kg = self.app_data.get_permanent_total_weight_kg()
+        
+        limit_field = ft.TextField(
+            label="Лимит вместимости (кг)", 
+            value=str(self.app_data.permanent_storage_limit),
+            keyboard_type=ft.KeyboardType.NUMBER,
+            hint_text=f"Минимум: {current_weight_kg:.2f} кг (текущий вес)",
+            autofocus=True
+        )
+        
+        def on_cancel(e):
+            self._close_dialog(dialog)
+        
+        def on_confirm(e):
             try:
-                new_limit = int(limit_field.value or "100")
+                new_limit = float(limit_field.value or "100")
                 if new_limit <= 0:
                     self._show_snackbar("Лимит должен быть больше 0!", ft.Colors.RED)
                     return
                 
-                # Проверка: если новый лимит меньше текущего количества
-                if new_limit < len(self.app_data.permanent_storage):
+                # Проверка: если новый лимит меньше текущего веса
+                if new_limit < current_weight_kg:
                     self._show_snackbar(
-                        f"Невозможно установить лимит {new_limit}! Сейчас в хранилище {len(self.app_data.permanent_storage)} рыб.",
+                        f"Невозможно установить лимит {new_limit:.1f} кг! Текущий вес: {current_weight_kg:.2f} кг.",
                         ft.Colors.RED
                     )
                     return
                 
                 self.app_data.permanent_storage_limit = new_limit
                 self.data_manager.save_app_data(self.app_data)
-                close_dialog(dialog)
+                self._close_dialog(dialog)
                 self.refresh()
                 self.on_data_changed()
-                self._show_snackbar(f"Лимит постоянного хранилища установлен: {new_limit}", ft.Colors.GREEN)
+                self._show_snackbar(f"Лимит постоянного хранилища: {new_limit:.1f} кг", ft.Colors.GREEN)
             except ValueError:
                 self._show_snackbar("Введите корректное число!", ft.Colors.RED)
         
-        limit_field = ft.TextField(
-            label="Новый лимит", 
-            value=str(self.app_data.permanent_storage_limit),
-            keyboard_type=ft.KeyboardType.NUMBER,
-            hint_text="Минимум: текущее количество рыб",
-            autofocus=True
-        )
-        
         dialog = ft.AlertDialog(
+            modal=True,
             title=ft.Text("Настройка постоянного хранилища"),
             content=ft.Column(
                 [
-                    ft.Text(f"Текущее количество рыб: {len(self.app_data.permanent_storage)}", size=13, color=ft.Colors.GREY_400),
+                    ft.Text(f"Текущий вес: {current_weight_kg:.2f} кг ({len(self.app_data.permanent_storage)} шт)", size=13, color=ft.Colors.GREY_400),
                     limit_field
                 ],
                 tight=True,
@@ -782,14 +901,13 @@ class LogView:
                 spacing=10
             ),
             actions=[
-                ft.TextButton("Отмена", on_click=lambda _: close_dialog(dialog)),
-                ft.FilledButton("Сохранить", on_click=lambda _: on_confirm(dialog))
+                ft.TextButton("Отмена", on_click=on_cancel),
+                ft.FilledButton("Сохранить", on_click=on_confirm)
             ],
             actions_alignment=ft.MainAxisAlignment.END
         )
-        self.page.dialog = dialog
-        dialog.open = True
-        self.page.update()
+        print("DEBUG: Открываю диалог настройки постоянного хранилища...")
+        self._open_dialog(dialog)
     
     def _on_sell_all(self, e):
         """Продать весь улов"""
@@ -798,42 +916,42 @@ class LogView:
             self._show_snackbar("Нет рыбы для продажи!", ft.Colors.ORANGE)
             return
         
-        def close_dialog(dialog):
-            dialog.open = False
-            self.page.update()
+        total_weight_kg = self.app_data.get_permanent_total_weight_kg()
+        fish_count = len(self.app_data.permanent_storage)
         
-        def on_confirm(dialog):
-            total_price = sum(f.price_guide for f in self.app_data.permanent_storage)
+        def on_cancel(e):
+            self._close_dialog(dialog)
+        
+        def on_confirm(e):
+            weight_kg = self.app_data.get_permanent_total_weight_kg()
             count = len(self.app_data.permanent_storage)
             
             self.app_data.permanent_storage.clear()
             self.data_manager.save_app_data(self.app_data)
-            close_dialog(dialog)
+            self._close_dialog(dialog)
             self.refresh()
             self.on_data_changed()
-            self._show_snackbar(f"Улов продан! Общая примерная выручка: {total_price:.0f} (продано {count} рыб)", ft.Colors.GREEN)
-        
-        total_price = sum(f.price_guide for f in self.app_data.permanent_storage)
+            self._show_snackbar(f"Улов продан! {count} рыб ({weight_kg:.2f} кг)", ft.Colors.GREEN)
         
         dialog = ft.AlertDialog(
+            modal=True,
             title=ft.Text("Подтверждение продажи"),
             content=ft.Column(
                 [
-                    ft.Text(f"Продать весь улов ({len(self.app_data.permanent_storage)} рыб)?", size=14),
-                    ft.Text(f"Примерная выручка: {total_price:.0f}", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN)
+                    ft.Text(f"Продать весь улов?", size=14),
+                    ft.Text(f"{fish_count} рыб • {total_weight_kg:.2f} кг", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN)
                 ],
                 tight=True,
                 spacing=10
             ),
             actions=[
-                ft.TextButton("Отмена", on_click=lambda _: close_dialog(dialog)),
-                ft.FilledButton("Продать", on_click=lambda _: on_confirm(dialog))
+                ft.TextButton("Отмена", on_click=on_cancel),
+                ft.FilledButton("Продать", on_click=on_confirm)
             ],
             actions_alignment=ft.MainAxisAlignment.END
         )
-        self.page.dialog = dialog
-        dialog.open = True
-        self.page.update()
+        print("DEBUG: Открываю диалог продажи...")
+        self._open_dialog(dialog)
     
     def _build_fish_card(self, fish: Fish, on_delete: Callable = None) -> ft.Container:
         """Создать карточку рыбы"""
@@ -862,9 +980,8 @@ class LogView:
                                 ],
                                 spacing=10
                             ),
-                            ft.Text(f"Вес: {fish.weight:.2f} кг", size=12),
-                            ft.Text(f"Наживка: {fish.best_bait}", size=11, color=ft.Colors.GREY_400),
-                            ft.Text(f"Цена: {fish.price_guide:.0f}", size=11, color=ft.Colors.GREY_400)
+                            ft.Text(f"Вес: {fish.weight:.0f} г ({fish.weight/1000:.2f} кг)", size=12),
+                            ft.Text(f"Наживка: {fish.best_bait}", size=11, color=ft.Colors.GREY_400)
                         ],
                         spacing=2,
                         expand=True
@@ -908,14 +1025,16 @@ class LogView:
                 self._build_fish_card(fish, self._on_delete_fish) for fish in sorted_fishes
             ]
             
-            # Обновить прогресс-бар
+            # Обновить прогресс-бар временного хранилища
             fill_percentage = current_storage.get_fill_percentage()
-            self.progress_bar.current.value = fill_percentage / 100
+            current_weight_kg = current_storage.get_total_weight_kg()
+            
+            self.progress_bar.current.value = min(fill_percentage / 100, 1.0)
             self.progress_bar.current.color = ft.Colors.RED if fill_percentage > 95 else ft.Colors.BLUE
             
-            # Показать уведомление при заполнении на 95%
-            if fill_percentage >= 95:
-                self._show_storage_warning(current_storage, fill_percentage)
+            # Обновить текст заполнения временного хранилища
+            if self.progress_text.current:
+                self.progress_text.current.value = f"Заполнено: {current_weight_kg:.2f} / {current_storage.limit:.1f} кг ({fill_percentage:.1f}%) • {len(current_storage.fishes)} шт"
             
             # Показать уведомление при заполнении на 95%
             if fill_percentage >= 95:
@@ -926,6 +1045,17 @@ class LogView:
         self.permanent_list_view.current.controls = [
             self._build_fish_card(fish) for fish in sorted_permanent
         ]
+        
+        # Обновить прогресс-бар постоянного хранилища
+        perm_fill_percentage = self.app_data.get_permanent_fill_percentage()
+        perm_weight_kg = self.app_data.get_permanent_total_weight_kg()
+        
+        if self.permanent_progress_bar.current:
+            self.permanent_progress_bar.current.value = min(perm_fill_percentage / 100, 1.0)
+            self.permanent_progress_bar.current.color = ft.Colors.RED if perm_fill_percentage > 95 else ft.Colors.GREEN
+        
+        if self.permanent_progress_text.current:
+            self.permanent_progress_text.current.value = f"Заполнено: {perm_weight_kg:.2f} / {self.app_data.permanent_storage_limit:.1f} кг • {len(self.app_data.permanent_storage)} шт"
         
         # Обновить селектор хранилищ
         storage_names = [s.name for s in self.app_data.temporary_storages]
@@ -949,7 +1079,8 @@ class LogView:
         # Показываем предупреждение только если процент изменился (чтобы не спамить)
         last_shown = self._last_warning_percentage.get(storage.name, 0)
         if fill_percentage >= 95 and fill_percentage != last_shown:
-            message = f"⚠️ Внимание! Хранилище '{storage.name}' заполнено на {fill_percentage:.1f}% ({len(storage.fishes)}/{storage.limit})"
+            weight_kg = storage.get_total_weight_kg()
+            message = f"⚠️ Внимание! Хранилище '{storage.name}' заполнено на {fill_percentage:.1f}% ({weight_kg:.2f}/{storage.limit:.1f} кг)"
             self._show_snackbar(message, ft.Colors.ORANGE)
             self._last_warning_percentage[storage.name] = fill_percentage
     

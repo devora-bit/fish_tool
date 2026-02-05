@@ -57,7 +57,7 @@ class Fish:
 class TemporaryStorage:
     """Временное хранилище"""
     name: str
-    limit: int
+    limit: float  # Лимит в килограммах
     fishes: list[Fish]
     
     def to_dict(self):
@@ -71,15 +71,27 @@ class TemporaryStorage:
     def from_dict(cls, data: dict):
         return cls(
             name=data["name"],
-            limit=data["limit"],
+            limit=float(data["limit"]),
             fishes=[Fish.from_dict(f) for f in data.get("fishes", [])]
         )
     
+    def get_total_weight_grams(self) -> float:
+        """Получить общий вес рыбы в граммах"""
+        return sum(f.weight for f in self.fishes)
+    
+    def get_total_weight_kg(self) -> float:
+        """Получить общий вес рыбы в килограммах"""
+        return self.get_total_weight_grams() / 1000
+    
     def get_fill_percentage(self):
-        """Получить процент заполнения"""
+        """Получить процент заполнения по весу"""
         if self.limit == 0:
             return 0
-        return (len(self.fishes) / self.limit) * 100
+        return (self.get_total_weight_kg() / self.limit) * 100
+    
+    def get_available_weight_kg(self) -> float:
+        """Получить доступное место в кг"""
+        return max(0, self.limit - self.get_total_weight_kg())
 
 
 @dataclass
@@ -88,7 +100,7 @@ class AppData:
     temporary_storages: list[TemporaryStorage]
     permanent_storage: list[Fish]
     current_storage_name: str
-    permanent_storage_limit: int = 100  # Лимит для постоянного хранилища
+    permanent_storage_limit: float = 100.0  # Лимит в килограммах
     
     def to_dict(self):
         return {
@@ -104,7 +116,7 @@ class AppData:
             temporary_storages=[TemporaryStorage.from_dict(ts) for ts in data.get("temporary_storages", [])],
             permanent_storage=[Fish.from_dict(f) for f in data.get("permanent_storage", [])],
             current_storage_name=data.get("current_storage_name", ""),
-            permanent_storage_limit=data.get("permanent_storage_limit", 100)
+            permanent_storage_limit=float(data.get("permanent_storage_limit", 100.0))
         )
     
     @classmethod
@@ -112,14 +124,14 @@ class AppData:
         """Создать структуру по умолчанию"""
         default_storage = TemporaryStorage(
             name="Основное хранилище",
-            limit=50,
+            limit=50.0,  # 50 кг
             fishes=[]
         )
         return cls(
             temporary_storages=[default_storage],
             permanent_storage=[],
             current_storage_name="Основное хранилище",
-            permanent_storage_limit=100
+            permanent_storage_limit=100.0  # 100 кг
         )
     
     def get_current_storage(self) -> Optional[TemporaryStorage]:
@@ -132,8 +144,20 @@ class AppData:
             return self.temporary_storages[0]
         return None
     
+    def get_permanent_total_weight_grams(self) -> float:
+        """Получить общий вес в постоянном хранилище (граммы)"""
+        return sum(f.weight for f in self.permanent_storage)
+    
+    def get_permanent_total_weight_kg(self) -> float:
+        """Получить общий вес в постоянном хранилище (кг)"""
+        return self.get_permanent_total_weight_grams() / 1000
+    
     def get_permanent_fill_percentage(self) -> float:
-        """Получить процент заполнения постоянного хранилища"""
+        """Получить процент заполнения постоянного хранилища по весу"""
         if self.permanent_storage_limit == 0:
             return 0
-        return (len(self.permanent_storage) / self.permanent_storage_limit) * 100
+        return (self.get_permanent_total_weight_kg() / self.permanent_storage_limit) * 100
+    
+    def get_permanent_available_weight_kg(self) -> float:
+        """Получить доступное место в постоянном хранилище (кг)"""
+        return max(0, self.permanent_storage_limit - self.get_permanent_total_weight_kg())

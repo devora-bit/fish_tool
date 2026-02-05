@@ -67,6 +67,7 @@ class StatsView:
         if not all_fishes:
             return {
                 "total": 0,
+                "total_weight_kg": 0,
                 "most_common": None,
                 "max_weight": None,
                 "rarity_distribution": {},
@@ -76,11 +77,14 @@ class StatsView:
         # Общее количество
         total = len(all_fishes)
         
+        # Общий вес (граммы → кг)
+        total_weight_kg = sum(f.weight for f in all_fishes) / 1000
+        
         # Самый частый улов
         name_counter = Counter(f.name for f in all_fishes)
         most_common = name_counter.most_common(1)[0] if name_counter else None
         
-        # Рекордный вес
+        # Рекордный вес (в граммах)
         max_weight_fish = max(all_fishes, key=lambda f: f.weight) if all_fishes else None
         
         # Распределение по редкости
@@ -92,6 +96,7 @@ class StatsView:
         
         return {
             "total": total,
+            "total_weight_kg": total_weight_kg,
             "most_common": most_common,
             "max_weight": max_weight_fish,
             "rarity_distribution": rarity_distribution,
@@ -115,7 +120,7 @@ class StatsView:
                                 ft.Column(
                                     [
                                         ft.Text("Всего поймано:", size=14, color=ft.Colors.GREY_400),
-                                        ft.Text(str(stats["total"]), size=24, weight=ft.FontWeight.BOLD)
+                                        ft.Text(f"{stats['total']} шт • {stats['total_weight_kg']:.2f} кг", size=24, weight=ft.FontWeight.BOLD)
                                     ],
                                     spacing=5
                                 )
@@ -149,7 +154,7 @@ class StatsView:
                                     [
                                         ft.Text("Рекордный вес:", size=14, color=ft.Colors.GREY_400),
                                         ft.Text(
-                                            f"{stats['max_weight'].name} - {stats['max_weight'].weight:.2f} кг" 
+                                            f"{stats['max_weight'].name} - {stats['max_weight'].weight:.0f} г ({stats['max_weight'].weight/1000:.2f} кг)" 
                                             if stats["max_weight"] else "Нет данных",
                                             size=16,
                                             weight=ft.FontWeight.W_500
